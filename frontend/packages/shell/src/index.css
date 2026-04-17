@@ -1,0 +1,70 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  height: 100%;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+.shell-side {
+  padding: 16px;
+  border-right: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.shell-side h1 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.shell-desc {
+  margin: 0 0 16px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.shell-side label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #374151;
+  margin-bottom: 12px;
+}
+
+.shell-side input {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 13px;
+}
+
+.shell-hint {
+  font-size: 11px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.shell-main {
+  min-height: 100%;
+  background: #fff;
+}
+
+.shell-main > * {
+  height: 100%;
+}

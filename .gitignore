@@ -89,3 +89,8 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+
+# Frontend (pnpm / Vite)
+frontend/node_modules/
+frontend/**/dist/
+frontend/.env

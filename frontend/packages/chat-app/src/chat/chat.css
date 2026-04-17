@@ -1,0 +1,174 @@
+.chat-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  height: 100%;
+  min-height: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+.chat-sidebar {
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  background: #f9fafb;
+}
+
+.chat-sidebar-header {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #4b5563;
+}
+
+.chat-label select {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+}
+
+.chat-sidebar-header button {
+  padding: 8px;
+  border-radius: 6px;
+  border: none;
+  background: #111827;
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.chat-sidebar-header button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chat-conv-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+  overflow: auto;
+  flex: 1;
+}
+
+.chat-conv-list li button {
+  width: 100%;
+  text-align: left;
+  padding: 8px;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.chat-conv-list li button.active {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+}
+
+.chat-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #fff;
+}
+
+.chat-banner.error {
+  background: #fef2f2;
+  color: #b91c1c;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.chat-empty-hint {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  padding: 24px;
+  text-align: center;
+}
+
+.chat-thread-empty {
+  padding: 24px;
+  text-align: center;
+  color: #9ca3af;
+}
+
+.aui-thread-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.aui-thread-viewport {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+}
+
+.msg {
+  max-width: 720px;
+  margin: 0 auto 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+.msg-user {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+
+.msg-assistant {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+}
+
+.aui-composer {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+  align-items: flex-end;
+}
+
+.aui-composer-input {
+  flex: 1;
+  min-height: 44px;
+  max-height: 160px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font: inherit;
+  resize: vertical;
+}
+
+.aui-composer-send {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  background: #111827;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.aui-composer-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

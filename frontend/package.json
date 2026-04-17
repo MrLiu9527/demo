@@ -1,0 +1,11 @@
+{
+  "name": "ai-assistant-frontend",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --parallel -r dev",
+    "dev:shell": "pnpm --filter @ai-assistant/shell dev",
+    "dev:chat": "pnpm --filter @ai-assistant/chat-app dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint"
+  }
+}

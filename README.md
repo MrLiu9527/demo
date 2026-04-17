@@ -93,10 +93,37 @@ python -m src.api.run
 
 API 文档地址：http://localhost:8000/docs
 
+## 前端（微前端 + assistant-ui）
+
+仓库内 `frontend/` 为 **pnpm workspace**，包含：
+
+- **`packages/shell`**：qiankun 主应用（端口 **5173**），通过 `loadMicroApp` 加载子应用。
+- **`packages/chat-app`**：子应用（端口 **5174**），使用 `@assistant-ui/react` 的 `useLocalRuntime` + `Thread` / `Composer` 等原语，请求后端 `X-User-Id` 与 `/api/v1/space/{spaceId}/...`。
+
+本地联调示例：
+
+```bash
+cd frontend
+pnpm install
+
+# 终端 1：子应用
+pnpm dev:chat
+
+# 终端 2：主应用（在侧栏填写 Space ID、User UUID，需与数据库一致且用户为该空间成员）
+pnpm dev:shell
+```
+
+也可单独运行子应用：复制 `frontend/.env.example` 为 `frontend/.env` 并填写 `VITE_SPACE_ID`、`VITE_USER_ID` 后执行 `pnpm dev:chat`。
+
+生产环境将子应用构建产物部署后，把主应用的 `VITE_CHAT_ENTRY` 指向子应用入口 URL（与 `vite-plugin-qiankun` 的 `base` 一致）。
+
 ## 项目结构
 
 ```
 ai-assistant/
+├── frontend/                     # 微前端（qiankun + assistant-ui）
+│   ├── packages/shell/           # 主应用
+│   └── packages/chat-app/        # 对话子应用
 ├── src/
 │   ├── api/                      # API 层
 │   │   ├── app.py                # FastAPI 应用入口
