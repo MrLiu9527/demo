@@ -369,11 +369,11 @@ async def delete_agent(
 )
 async def clone_agent(
     agent_id: str,
-    new_agent_id: str = Query(..., description="新 Agent ID"),
-    new_name: str = Query(..., description="新 Agent 名称"),
     space: SpaceAdmin,
     current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
+    new_agent_id: str = Query(..., description="新 Agent ID"),
+    new_name: str = Query(..., description="新 Agent 名称"),
 ):
     """克隆 Agent"""
     service = AgentConfigService(db)
