@@ -9,89 +9,7 @@
 - **框架**：阿里 AgentScope
 - **语言**：Python 3.12
 - **数据库**：PostgreSQL
-
-## 核心特性
-
-### 多租户架构
-
-- **平台级 Agent**：系统提供的通用数字员工，所有用户可用
-- **空间级 Agent**：用户自定义的数字员工，仅空间成员可用
-- **空间（Space）**：用户的工作区，可以是个人空间或团队空间
-
-### 可配置的 Agent
-
-所有 Agent 配置存储在数据库中，支持：
-- 动态配置系统提示词
-- 选择不同的 LLM 模型
-- 挂载 Skills 和 Tools
-- 自定义行为参数
-
-### 会话持久化
-
-- 会话和消息自动保存到 PostgreSQL
-- 支持多轮对话历史
-- Token 使用统计
-- 会话上下文快照
-
-## 项目结构
-
-```
-/workspace
-├── src/
-│   ├── agents/                 # Agent 模块
-│   │   ├── base.py             # Agent 基类
-│   │   ├── factory.py          # Agent 工厂
-│   │   ├── manager.py          # Agent 管理器
-│   │   ├── registry.py         # Agent 注册中心
-│   │   └── implementations/    # Agent 实现
-│   │       ├── configurable_agent.py
-│   │       ├── dialog_agent.py
-│   │       └── tool_agent.py
-│   │
-│   ├── skills/                 # Skills 技能模块
-│   │   ├── base/               # Skill 基础设施
-│   │   │   ├── decorator.py    # @skill 装饰器
-│   │   │   ├── registry.py     # Skill 注册中心
-│   │   │   └── response.py     # Skill 响应定义
-│   │   ├── common/             # 通用 Skills
-│   │   └── domain/             # 领域特定 Skills
-│   │
-│   ├── models/                 # 数据模型
-│   │   ├── user.py             # 用户模型
-│   │   ├── space.py            # 空间模型
-│   │   ├── agent.py            # Agent 配置模型
-│   │   └── conversation.py     # 会话和消息模型
-│   │
-│   ├── services/               # 服务层
-│   │   ├── user_service.py
-│   │   ├── space_service.py
-│   │   ├── agent_service.py
-│   │   ├── conversation_service.py
-│   │   └── message_service.py
-│   │
-│   ├── db/                     # 数据库
-│   ├── core/                   # 核心配置
-│   ├── tools/                  # Tools 工具
-│   ├── mcp/                    # MCP 协议
-│   └── utils/                  # 工具函数
-│
-├── tests/                      # 测试
-├── configs/                    # 配置文件
-├── migrations/                 # 数据库迁移
-├── scripts/                    # 脚本
-└── docs/                       # 文档
-```
-
-## 数据库表结构
-
-| 表名 | 说明 |
-|------|------|
-| users | 用户表 |
-| spaces | 空间表（工作区） |
-| space_members | 空间成员关系表 |
-| agent_configs | Agent 配置表 |
-| conversations | 会话表 |
-| messages | 消息表 |
+- **API**：FastAPI
 
 ## 快速开始
 
@@ -101,7 +19,6 @@
 # 创建虚拟环境
 python -m venv .venv
 source .venv/bin/activate  # Linux/Mac
-# .venv\Scripts\activate  # Windows
 
 # 安装依赖
 pip install -e ".[dev]"
@@ -110,16 +27,13 @@ pip install -e ".[dev]"
 ### 2. 配置环境变量
 
 ```bash
-# 复制环境变量模板
 cp .env.example .env
-
-# 编辑 .env 文件，配置数据库和 API Key
+# 编辑 .env 配置数据库和 API Key
 ```
 
 ### 3. 启动 PostgreSQL
 
 ```bash
-# 使用 Docker
 docker run -d \
   --name postgres-allinai \
   -e POSTGRES_USER=postgres \
@@ -127,122 +41,139 @@ docker run -d \
   -e POSTGRES_DB=all_in_ai \
   -p 5432:5432 \
   postgres:15
-
-# 或使用现有的 PostgreSQL 实例
 ```
 
 ### 4. 初始化数据库
 
 ```bash
-# 创建表并初始化平台级 Agent
 python scripts/init_db.py
-
-# 可选：重建数据库
-python scripts/init_db.py --drop
 ```
 
-### 5. 运行示例
+### 5. 启动 API 服务
 
 ```bash
-python -m src.main
+# 方式1：使用 uvicorn
+uvicorn src.api.app:app --reload --host 0.0.0.0 --port 8000
+
+# 方式2：使用脚本
+python -m src.api.run
+
+# 方式3：安装后使用命令
+all-in-ai
 ```
 
-## 核心概念
+API 文档：http://localhost:8000/docs
 
-### Agent（数字员工）
+## API 接口
 
-Agent 是一个具有特定职能的智能代理。系统预置了两个平台级 Agent：
+所有业务 API 都在 `/api/v1/space/{space_id}/` 路径下。
 
-1. **通用助手** (`general_assistant`)
-   - 类型：对话型
-   - 用途：回答问题、提供建议
+### 认证
 
-2. **工具助手** (`tool_assistant`)
-   - 类型：工具调用型
-   - 用途：使用工具完成复杂任务
-
-### 使用 Agent
-
-```python
-from src.agents import agent_manager
-
-# 初始化管理器
-await agent_manager.initialize()
-
-# 获取平台级 Agent
-agent = await agent_manager.get_platform_agent("general_assistant")
-
-# 创建会话
-context = await agent_manager.create_conversation(
-    agent_id="general_assistant",
-    space_id=space_id,
-    user_id=user_id,
-)
-
-# 对话
-response = await agent_manager.chat(
-    agent_id="general_assistant",
-    space_id=space_id,
-    conversation_id=context.conversation_id,
-    message="你好！",
-)
-```
-
-### 创建自定义 Agent
-
-```python
-from src.db.session import async_session_scope
-from src.services.agent_service import AgentConfigService
-from src.models.agent import AgentType, AgentScope, AgentStatus
-
-async with async_session_scope() as session:
-    service = AgentConfigService(session)
-    
-    # 创建空间级 Agent
-    config = await service.create(
-        agent_id="my_assistant",
-        name="我的助手",
-        description="自定义的 AI 助手",
-        space_id=my_space_id,
-        type=AgentType.DIALOG,
-        scope=AgentScope.SPACE,
-        status=AgentStatus.PUBLISHED,
-        system_prompt="你是一个专业的助手...",
-        model_provider="dashscope",
-        model_name="qwen-turbo",
-        skills=["common.text.extract_keywords"],
-    )
-```
-
-### Skill（技能）
-
-Skill 是 Agent 的能力模块：
-
-```python
-from src.skills import skill, SkillResponse
-
-@skill(
-    skill_id="my.custom.skill",
-    name="自定义技能",
-    description="这是一个自定义技能",
-)
-def my_skill(param1: str) -> SkillResponse:
-    result = process(param1)
-    return SkillResponse.success(content=result)
-```
-
-## 测试
+目前支持通过 `X-User-Id` Header 传递用户 ID（开发/测试用）：
 
 ```bash
-# 运行所有测试
-pytest
-
-# 运行特定测试
-pytest tests/skills/
-
-# 生成覆盖率报告
-pytest --cov=src --cov-report=html
+curl -H "X-User-Id: <user-uuid>" http://localhost:8000/api/v1/...
 ```
+
+### Agent API
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/v1/space/{spaceId}/agents` | 获取 Agent 列表 |
+| GET | `/api/v1/space/{spaceId}/agents/{agentId}` | 获取 Agent 详情 |
+| POST | `/api/v1/space/{spaceId}/agents` | 创建 Agent |
+| PUT | `/api/v1/space/{spaceId}/agents/{agentId}` | 更新 Agent |
+| DELETE | `/api/v1/space/{spaceId}/agents/{agentId}` | 删除 Agent |
+| POST | `/api/v1/space/{spaceId}/agents/{agentId}/publish` | 发布 Agent |
+| POST | `/api/v1/space/{spaceId}/agents/{agentId}/clone` | 克隆 Agent |
+
+### Conversation API
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/v1/space/{spaceId}/conversations` | 获取会话列表 |
+| POST | `/api/v1/space/{spaceId}/conversations` | 创建会话 |
+| GET | `/api/v1/space/{spaceId}/conversations/{id}` | 获取会话详情 |
+| PUT | `/api/v1/space/{spaceId}/conversations/{id}` | 更新会话 |
+| DELETE | `/api/v1/space/{spaceId}/conversations/{id}` | 删除会话 |
+| GET | `/api/v1/space/{spaceId}/conversations/{id}/messages` | 获取消息列表 |
+| POST | `/api/v1/space/{spaceId}/conversations/{id}/end` | 结束会话 |
+
+### Chat API
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/v1/space/{spaceId}/chat/{agentId}` | 快速聊天（自动创建会话） |
+| POST | `/api/v1/space/{spaceId}/chat/conversations/{id}/messages` | 在会话中发送消息 |
+
+### Space API
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/v1/spaces` | 获取空间列表 |
+| POST | `/api/v1/spaces` | 创建空间 |
+| GET | `/api/v1/spaces/{spaceId}` | 获取空间详情 |
+| PUT | `/api/v1/spaces/{spaceId}` | 更新空间 |
+| DELETE | `/api/v1/spaces/{spaceId}` | 删除空间 |
+| GET | `/api/v1/spaces/{spaceId}/members` | 获取成员列表 |
+| POST | `/api/v1/spaces/{spaceId}/members` | 添加成员 |
+| PUT | `/api/v1/spaces/{spaceId}/members/{userId}` | 更新成员角色 |
+| DELETE | `/api/v1/spaces/{spaceId}/members/{userId}` | 移除成员 |
+
+## 示例：与 Agent 聊天
+
+```bash
+# 1. 获取 admin 用户 ID（从数据库或初始化日志）
+USER_ID="your-admin-user-id"
+
+# 2. 获取系统空间 ID
+SPACE_ID="your-system-space-id"
+
+# 3. 查看可用的 Agent
+curl -H "X-User-Id: $USER_ID" \
+  "http://localhost:8000/api/v1/space/$SPACE_ID/agents"
+
+# 4. 与通用助手聊天
+curl -X POST \
+  -H "X-User-Id: $USER_ID" \
+  -H "Content-Type: application/json" \
+  -d '{"message": "你好，请介绍一下你自己"}' \
+  "http://localhost:8000/api/v1/space/$SPACE_ID/chat/general_assistant"
+```
+
+## 项目结构
+
+```
+/workspace
+├── src/
+│   ├── api/                    # API 层
+│   │   ├── app.py              # FastAPI 应用
+│   │   ├── deps/               # 依赖注入
+│   │   ├── schemas/            # Pydantic Schema
+│   │   └── v1/endpoints/       # API 端点
+│   ├── agents/                 # Agent 模块
+│   ├── skills/                 # Skills 模块
+│   ├── models/                 # 数据模型
+│   ├── services/               # 服务层
+│   ├── db/                     # 数据库
+│   └── core/                   # 核心配置
+├── tests/                      # 测试
+├── configs/                    # 配置文件
+├── migrations/                 # 数据库迁移
+└── scripts/                    # 脚本
+```
+
+## 数据库表
+
+| 表名 | 说明 |
+|------|------|
+| users | 用户 |
+| spaces | 空间 |
+| space_members | 空间成员 |
+| agent_configs | Agent 配置 |
+| conversations | 会话 |
+| messages | 消息 |
 
 ## 文档
 
