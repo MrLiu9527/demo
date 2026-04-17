@@ -371,9 +371,9 @@ async def clone_agent(
     agent_id: str,
     space: SpaceAdmin,
     current_user: CurrentUser,
-    db: AsyncSession = Depends(get_db),
     new_agent_id: str = Query(..., description="新 Agent ID"),
     new_name: str = Query(..., description="新 Agent 名称"),
+    db: AsyncSession = Depends(get_db),
 ):
     """克隆 Agent"""
     service = AgentConfigService(db)
