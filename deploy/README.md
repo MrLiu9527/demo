@@ -23,10 +23,19 @@ docker compose up -d --build
 ## 验证
 
 ```bash
-curl -s http://127.0.0.1:8000/health
+docker compose ps
+docker compose logs -f --tail=100 api
+curl -s http://127.0.0.1/health
 ```
 
-对外访问需在安全组开放 `API_PORT`（默认 8000），生产环境建议前面加 Nginx/ALB 并配置 TLS。
+- **Nginx** 监听宿主机 **`HTTP_PORT`（默认 80）**，反代到容器内 **api:8000**；API 不再默认映射到宿主机 8000，避免与 Nginx 混淆。
+- 对外需在安全组开放 **`HTTP_PORT`**（默认 80）。HTTPS 可在 Nginx 前加 ALB 或自行挂证书。
+
+## 常见问题
+
+- **`api` 一直 `starting` 或 `unhealthy`**：`docker compose logs api`。常见原因：数据库未就绪、镜像构建失败、`init_db` 异常。
+- **只有 `postgres` / `redis` 镜像、没有 `ai-assistant-api`**：在 `deploy` 目录执行 `docker compose build api` 或 `docker compose up -d --build`，并确认 CI 里 `docker compose` 已成功跑完。
+- **镜像名**：API 镜像默认为 **`ai-assistant-api:latest`**（可在 `.env` 中设置 `API_IMAGE_NAME` / `API_IMAGE_TAG`）。
 
 ## GitHub Actions
 

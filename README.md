@@ -104,7 +104,7 @@ chmod +x generate-env.sh docker-entrypoint.sh
 docker compose up -d --build
 ```
 
-`generate-env.sh` 会生成 `deploy/.env`（随机数据库与 Redis 密码等，勿提交）。详见 [deploy/README.md](deploy/README.md)。CI 推送部署见 [.github/workflows/deploy-ec2.yml](.github/workflows/deploy-ec2.yml)。
+`generate-env.sh` 会生成 `deploy/.env`（随机数据库与 Redis 密码等，勿提交）。栈内包含 **自建 API 镜像** 与 **官方 `nginx` 镜像**，默认 **80** 端口对外反代到 API。详见 [deploy/README.md](deploy/README.md)。CI 推送部署见 [.github/workflows/deploy-ec2.yml](.github/workflows/deploy-ec2.yml)。
 
 ## 前端（微前端 + assistant-ui）
 
