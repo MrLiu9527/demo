@@ -23,6 +23,6 @@ for i in range(60):
 PY
 
 echo "Running database init (idempotent)..."
-python scripts/init_db.py --no-drop
+python scripts/init_db.py
 
 exec "$@"
