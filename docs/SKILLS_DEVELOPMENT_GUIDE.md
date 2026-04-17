@@ -1,11 +1,14 @@
 # Skills 开发规范
 
-> **项目说明**：该项目是一个多人聊天网站。所有的功能和业务由 Cursor 完成！
+> **项目名称**：ALL-IN-AI  
+> **项目描述**：数字员工功能平台，每个数字员工是一个 Agent，根据挂载的工具（Tools）、MCP、Skills 等不同来负责不同的职能  
+> **使用框架**：阿里 AgentScope  
+> **开发语言**：Python 3.12
 
 ## 目录
 
 1. [概述](#概述)
-2. [项目功能模块](#项目功能模块)
+2. [AgentScope 框架简介](#agentscope-框架简介)
 3. [目录结构](#目录结构)
 4. [命名规范](#命名规范)
 5. [Skill 定义规范](#skill-定义规范)
@@ -19,123 +22,69 @@
 
 ## 概述
 
-本文档定义了**多人聊天网站**项目中 Skills（技能/功能模块）的开发规范。每个 Skill 代表一个独立的功能单元，可以被系统或用户调用以完成特定任务。
+本文档定义了 ALL-IN-AI 数字员工平台中 Skills（技能模块）的开发规范。
+
+### 核心概念
+
+在 ALL-IN-AI 平台中：
+
+- **Agent（数字员工）**：具有特定职能的智能代理，可以执行任务、与用户交互
+- **Skills（技能）**：Agent 具备的能力模块，封装了特定的功能逻辑
+- **Tools（工具）**：可被 Agent 调用的外部工具或 API
+- **MCP（Model Context Protocol）**：模型上下文协议，用于扩展 Agent 能力
 
 ### 什么是 Skill？
 
-Skill 是一个封装了特定功能逻辑的模块，具有以下特点：
+Skill 是一个封装了特定功能逻辑的 Python 模块，具有以下特点：
+
 - **独立性**：每个 Skill 应该是自包含的，有明确的输入和输出
-- **可复用性**：设计时应考虑在不同场景下的复用
+- **可复用性**：设计时应考虑在不同 Agent 之间的复用
+- **可组合性**：多个 Skills 可以组合使用，形成更复杂的能力
 - **可测试性**：每个 Skill 都应该有对应的测试用例
-- **可扩展性**：支持参数配置和功能扩展
+- **兼容性**：与 AgentScope 框架无缝集成
 
 ---
 
-## 项目功能模块
+## AgentScope 框架简介
 
-作为一个多人聊天网站，项目包含以下核心功能模块：
+[AgentScope](https://github.com/modelscope/agentscope) 是阿里开源的多智能体框架，支持：
 
-### 用户模块 (User)
-| Skill ID | 名称 | 描述 | 优先级 |
-|----------|------|------|--------|
-| user.register | 用户注册 | 新用户注册账号 | P0 |
-| user.login | 用户登录 | 用户登录系统 | P0 |
-| user.logout | 用户登出 | 用户退出登录 | P0 |
-| user.getProfile | 获取用户信息 | 获取用户个人资料 | P1 |
-| user.updateProfile | 更新用户信息 | 修改用户个人资料 | P1 |
-| user.updateAvatar | 更新头像 | 上传/修改用户头像 | P2 |
-| user.changePassword | 修改密码 | 用户修改登录密码 | P1 |
-| user.resetPassword | 重置密码 | 忘记密码后重置 | P1 |
-| user.searchUsers | 搜索用户 | 搜索其他用户 | P2 |
-| user.blockUser | 拉黑用户 | 屏蔽某个用户 | P2 |
-| user.unblockUser | 取消拉黑 | 解除用户屏蔽 | P2 |
+- 多种 Agent 类型（对话、任务、工具使用等）
+- 灵活的消息传递机制
+- 服务函数（Service Functions）机制用于扩展能力
+- 支持多种 LLM 后端
 
-### 聊天模块 (Chat)
-| Skill ID | 名称 | 描述 | 优先级 |
-|----------|------|------|--------|
-| chat.sendMessage | 发送消息 | 发送文本/图片/文件消息 | P0 |
-| chat.receiveMessage | 接收消息 | 接收实时消息 | P0 |
-| chat.getHistory | 获取历史消息 | 获取聊天记录 | P0 |
-| chat.deleteMessage | 删除消息 | 删除已发送的消息 | P1 |
-| chat.editMessage | 编辑消息 | 修改已发送的消息 | P2 |
-| chat.recallMessage | 撤回消息 | 撤回已发送的消息 | P1 |
-| chat.forwardMessage | 转发消息 | 转发消息到其他会话 | P2 |
-| chat.replyMessage | 回复消息 | 引用回复某条消息 | P2 |
-| chat.sendTypingStatus | 发送输入状态 | 显示"正在输入" | P2 |
-| chat.markAsRead | 标记已读 | 标记消息为已读 | P1 |
-| chat.searchMessages | 搜索消息 | 搜索聊天记录 | P2 |
+### AgentScope 中的 Service（服务函数）
 
-### 房间/群组模块 (Room)
-| Skill ID | 名称 | 描述 | 优先级 |
-|----------|------|------|--------|
-| room.create | 创建房间 | 创建新的聊天房间/群组 | P0 |
-| room.join | 加入房间 | 加入已存在的房间 | P0 |
-| room.leave | 离开房间 | 退出房间 | P0 |
-| room.invite | 邀请用户 | 邀请用户加入房间 | P1 |
-| room.kick | 踢出用户 | 将用户移出房间 | P1 |
-| room.getInfo | 获取房间信息 | 获取房间详细信息 | P1 |
-| room.updateInfo | 更新房间信息 | 修改房间名称/描述等 | P1 |
-| room.getMembers | 获取成员列表 | 获取房间成员列表 | P1 |
-| room.setAdmin | 设置管理员 | 设置/取消管理员权限 | P2 |
-| room.transferOwner | 转让房主 | 转让房间所有权 | P2 |
-| room.dissolve | 解散房间 | 解散聊天房间 | P2 |
-| room.mute | 禁言 | 对成员禁言 | P2 |
-| room.unmute | 解除禁言 | 解除成员禁言 | P2 |
-| room.setAnnouncement | 设置公告 | 设置房间公告 | P2 |
-| room.list | 房间列表 | 获取用户的房间列表 | P0 |
+在 AgentScope 中，Skills 通常以 **Service Function** 的形式实现：
 
-### 好友模块 (Friend)
-| Skill ID | 名称 | 描述 | 优先级 |
-|----------|------|------|--------|
-| friend.add | 添加好友 | 发送好友请求 | P1 |
-| friend.accept | 接受好友 | 接受好友请求 | P1 |
-| friend.reject | 拒绝好友 | 拒绝好友请求 | P1 |
-| friend.remove | 删除好友 | 删除好友关系 | P1 |
-| friend.list | 好友列表 | 获取好友列表 | P1 |
-| friend.getRequests | 好友请求列表 | 获取待处理的好友请求 | P1 |
-| friend.setRemark | 设置备注 | 设置好友备注名 | P2 |
-| friend.getOnlineStatus | 获取在线状态 | 获取好友在线状态 | P2 |
+```python
+from agentscope.service import ServiceResponse, ServiceExecStatus
 
-### 通知模块 (Notification)
-| Skill ID | 名称 | 描述 | 优先级 |
-|----------|------|------|--------|
-| notification.send | 发送通知 | 发送系统通知 | P1 |
-| notification.list | 通知列表 | 获取通知列表 | P1 |
-| notification.markRead | 标记已读 | 标记通知为已读 | P1 |
-| notification.delete | 删除通知 | 删除通知 | P2 |
-| notification.getUnreadCount | 未读数量 | 获取未读通知数量 | P1 |
-
-### 文件模块 (File)
-| Skill ID | 名称 | 描述 | 优先级 |
-|----------|------|------|--------|
-| file.upload | 上传文件 | 上传图片/文件/视频 | P1 |
-| file.download | 下载文件 | 下载文件 | P1 |
-| file.getUrl | 获取文件URL | 获取文件访问链接 | P1 |
-| file.delete | 删除文件 | 删除已上传的文件 | P2 |
-
-### 实时通信模块 (Realtime)
-| Skill ID | 名称 | 描述 | 优先级 |
-|----------|------|------|--------|
-| realtime.connect | 建立连接 | 建立 WebSocket 连接 | P0 |
-| realtime.disconnect | 断开连接 | 断开 WebSocket 连接 | P0 |
-| realtime.reconnect | 重新连接 | 自动重连机制 | P0 |
-| realtime.heartbeat | 心跳检测 | 保持连接活跃 | P0 |
-| realtime.subscribe | 订阅频道 | 订阅消息频道 | P1 |
-| realtime.unsubscribe | 取消订阅 | 取消频道订阅 | P1 |
-
-### 表情/贴纸模块 (Emoji)
-| Skill ID | 名称 | 描述 | 优先级 |
-|----------|------|------|--------|
-| emoji.list | 表情列表 | 获取系统表情列表 | P2 |
-| emoji.addCustom | 添加自定义表情 | 添加自定义表情 | P3 |
-| emoji.removeCustom | 删除自定义表情 | 删除自定义表情 | P3 |
-| emoji.getRecent | 最近使用 | 获取最近使用的表情 | P3 |
-
-### 优先级说明
-- **P0**: 核心功能，必须实现
-- **P1**: 重要功能，应该实现
-- **P2**: 增强功能，可选实现
-- **P3**: 锦上添花，低优先级
+def my_skill(param1: str, param2: int) -> ServiceResponse:
+    """
+    技能描述
+    
+    Args:
+        param1: 参数1描述
+        param2: 参数2描述
+        
+    Returns:
+        ServiceResponse: 执行结果
+    """
+    try:
+        # 执行逻辑
+        result = do_something(param1, param2)
+        return ServiceResponse(
+            status=ServiceExecStatus.SUCCESS,
+            content=result
+        )
+    except Exception as e:
+        return ServiceResponse(
+            status=ServiceExecStatus.ERROR,
+            content=str(e)
+        )
+```
 
 ---
 
@@ -144,91 +93,94 @@ Skill 是一个封装了特定功能逻辑的模块，具有以下特点：
 ```
 /workspace
 ├── src/
+│   ├── agents/                    # Agent 定义
+│   │   ├── __init__.py
+│   │   ├── base_agent.py          # 基础 Agent 类
+│   │   └── digital_employees/     # 数字员工 Agent
+│   │       ├── __init__.py
+│   │       ├── customer_service.py    # 客服数字员工
+│   │       ├── data_analyst.py        # 数据分析数字员工
+│   │       └── content_creator.py     # 内容创作数字员工
+│   │
 │   ├── skills/                    # Skills 根目录
-│   │   ├── index.ts               # Skills 统一导出入口
-│   │   ├── types.ts               # Skills 通用类型定义
-│   │   ├── base/                  # 基础 Skill 类
-│   │   │   └── BaseSkill.ts
-│   │   ├── user/                  # 用户模块 Skills
-│   │   │   ├── index.ts
-│   │   │   ├── RegisterSkill.ts
-│   │   │   ├── LoginSkill.ts
-│   │   │   ├── LogoutSkill.ts
-│   │   │   ├── GetProfileSkill.ts
-│   │   │   ├── UpdateProfileSkill.ts
-│   │   │   └── __tests__/
-│   │   ├── chat/                  # 聊天模块 Skills
-│   │   │   ├── index.ts
-│   │   │   ├── SendMessageSkill.ts
-│   │   │   ├── ReceiveMessageSkill.ts
-│   │   │   ├── GetHistorySkill.ts
-│   │   │   ├── DeleteMessageSkill.ts
-│   │   │   ├── RecallMessageSkill.ts
-│   │   │   ├── MarkAsReadSkill.ts
-│   │   │   └── __tests__/
-│   │   ├── room/                  # 房间/群组模块 Skills
-│   │   │   ├── index.ts
-│   │   │   ├── CreateRoomSkill.ts
-│   │   │   ├── JoinRoomSkill.ts
-│   │   │   ├── LeaveRoomSkill.ts
-│   │   │   ├── InviteSkill.ts
-│   │   │   ├── KickSkill.ts
-│   │   │   ├── GetInfoSkill.ts
-│   │   │   ├── GetMembersSkill.ts
-│   │   │   ├── ListRoomsSkill.ts
-│   │   │   └── __tests__/
-│   │   ├── friend/                # 好友模块 Skills
-│   │   │   ├── index.ts
-│   │   │   ├── AddFriendSkill.ts
-│   │   │   ├── AcceptFriendSkill.ts
-│   │   │   ├── RejectFriendSkill.ts
-│   │   │   ├── RemoveFriendSkill.ts
-│   │   │   ├── ListFriendsSkill.ts
-│   │   │   └── __tests__/
-│   │   ├── notification/          # 通知模块 Skills
-│   │   │   ├── index.ts
-│   │   │   ├── SendNotificationSkill.ts
-│   │   │   ├── ListNotificationsSkill.ts
-│   │   │   ├── MarkReadSkill.ts
-│   │   │   └── __tests__/
-│   │   ├── file/                  # 文件模块 Skills
-│   │   │   ├── index.ts
-│   │   │   ├── UploadFileSkill.ts
-│   │   │   ├── DownloadFileSkill.ts
-│   │   │   ├── GetFileUrlSkill.ts
-│   │   │   └── __tests__/
-│   │   ├── realtime/              # 实时通信模块 Skills
-│   │   │   ├── index.ts
-│   │   │   ├── ConnectSkill.ts
-│   │   │   ├── DisconnectSkill.ts
-│   │   │   ├── ReconnectSkill.ts
-│   │   │   ├── HeartbeatSkill.ts
-│   │   │   ├── SubscribeSkill.ts
-│   │   │   └── __tests__/
-│   │   └── utils/                 # Skills 工具函数
-│   │       ├── index.ts
-│   │       ├── validators.ts      # 通用验证函数
-│   │       └── formatters.ts      # 数据格式化函数
-├── docs/
-│   ├── skills/                    # Skills 文档目录
+│   │   ├── __init__.py            # Skills 统一导出入口
+│   │   ├── base.py                # 基础 Skill 类/装饰器
+│   │   ├── registry.py            # Skill 注册中心
+│   │   │
+│   │   ├── common/                # 通用 Skills
+│   │   │   ├── __init__.py
+│   │   │   ├── text_processing.py     # 文本处理
+│   │   │   ├── data_conversion.py     # 数据转换
+│   │   │   └── file_operations.py     # 文件操作
+│   │   │
+│   │   ├── communication/         # 通信相关 Skills
+│   │   │   ├── __init__.py
+│   │   │   ├── email.py               # 邮件发送
+│   │   │   ├── sms.py                 # 短信发送
+│   │   │   └── notification.py        # 通知推送
+│   │   │
+│   │   ├── data/                  # 数据处理 Skills
+│   │   │   ├── __init__.py
+│   │   │   ├── database.py            # 数据库操作
+│   │   │   ├── analytics.py           # 数据分析
+│   │   │   └── visualization.py       # 数据可视化
+│   │   │
+│   │   ├── integration/           # 外部集成 Skills
+│   │   │   ├── __init__.py
+│   │   │   ├── api_client.py          # API 调用
+│   │   │   ├── webhook.py             # Webhook 处理
+│   │   │   └── third_party/           # 第三方服务集成
+│   │   │       ├── __init__.py
+│   │   │       ├── dingtalk.py        # 钉钉
+│   │   │       ├── wechat.py          # 微信
+│   │   │       └── feishu.py          # 飞书
+│   │   │
+│   │   └── domain/                # 领域特定 Skills
+│   │       ├── __init__.py
+│   │       ├── customer_service/      # 客服领域
+│   │       ├── finance/               # 财务领域
+│   │       ├── hr/                    # 人力资源领域
+│   │       └── marketing/             # 营销领域
+│   │
+│   ├── tools/                     # Tools 定义
+│   │   ├── __init__.py
+│   │   ├── base.py                # 基础 Tool 类
+│   │   └── ...
+│   │
+│   ├── mcp/                       # MCP 相关
+│   │   ├── __init__.py
+│   │   ├── protocols.py           # 协议定义
+│   │   └── handlers.py            # 处理器
+│   │
+│   └── utils/                     # 工具函数
+│       ├── __init__.py
+│       ├── validators.py          # 验证器
+│       ├── formatters.py          # 格式化器
+│       └── helpers.py             # 辅助函数
+│
+├── tests/                         # 测试目录
+│   ├── __init__.py
+│   ├── conftest.py                # pytest 配置
+│   ├── skills/                    # Skills 测试
+│   │   ├── __init__.py
+│   │   ├── test_common.py
+│   │   ├── test_communication.py
+│   │   └── ...
+│   └── agents/                    # Agents 测试
+│
+├── docs/                          # 文档目录
+│   ├── skills/                    # Skills 文档
 │   │   ├── README.md              # Skills 总览
-│   │   ├── user.md                # 用户模块文档
-│   │   ├── chat.md                # 聊天模块文档
-│   │   ├── room.md                # 房间模块文档
-│   │   ├── friend.md              # 好友模块文档
-│   │   ├── notification.md        # 通知模块文档
-│   │   ├── file.md                # 文件模块文档
-│   │   └── realtime.md            # 实时通信模块文档
+│   │   └── api/                   # API 文档
 │   └── SKILLS_DEVELOPMENT_GUIDE.md
-└── tests/
-    └── skills/                    # Skills 集成测试
-        ├── user/
-        ├── chat/
-        ├── room/
-        ├── friend/
-        ├── notification/
-        ├── file/
-        └── realtime/
+│
+├── configs/                       # 配置文件
+│   ├── agents/                    # Agent 配置
+│   └── skills/                    # Skill 配置
+│
+├── requirements.txt               # 项目依赖
+├── pyproject.toml                 # 项目配置
+└── README.md
 ```
 
 ---
@@ -239,474 +191,658 @@ Skill 是一个封装了特定功能逻辑的模块，具有以下特点：
 
 | 类型 | 规范 | 示例 |
 |------|------|------|
-| Skill 文件 | PascalCase + `Skill` 后缀 | `SendMessageSkill.ts` |
-| 测试文件 | 与源文件同名 + `.test.ts` | `SendMessageSkill.test.ts` |
-| 类型文件 | 小写 + `.types.ts` | `message.types.ts` |
-| 工具文件 | 小写 + camelCase | `messageUtils.ts` |
+| Skill 模块文件 | snake_case | `text_processing.py` |
+| 测试文件 | `test_` + 模块名 | `test_text_processing.py` |
+| 配置文件 | snake_case + `.yaml`/`.json` | `skill_config.yaml` |
 
-### 类/接口命名
+### 函数/类命名
 
-```typescript
-// Skill 类名：PascalCase + Skill 后缀
-class SendMessageSkill extends BaseSkill {}
+```python
+# Skill 函数名：snake_case，动词开头
+def send_email(to: str, subject: str, body: str) -> ServiceResponse:
+    pass
 
-// 接口名：I + PascalCase
-interface ISkillConfig {}
-interface ISkillResult {}
+def analyze_data(data: pd.DataFrame) -> ServiceResponse:
+    pass
 
-// 类型名：PascalCase
-type SkillStatus = 'idle' | 'running' | 'completed' | 'failed';
+def extract_keywords(text: str, top_k: int = 10) -> ServiceResponse:
+    pass
 
-// 枚举名：PascalCase，成员全大写
-enum SkillCategory {
-  USER = 'user',
-  CHAT = 'chat',
-  ROOM = 'room',
-  FRIEND = 'friend',
-  NOTIFICATION = 'notification',
-  FILE = 'file',
-  REALTIME = 'realtime',
-  EMOJI = 'emoji',
-}
+# Skill 类名：PascalCase + Skill 后缀
+class EmailSkill:
+    pass
+
+class DataAnalysisSkill:
+    pass
+
+# 常量名：UPPER_SNAKE_CASE
+MAX_RETRY_COUNT = 3
+DEFAULT_TIMEOUT = 30
+SUPPORTED_FILE_TYPES = ['pdf', 'docx', 'xlsx']
+
+# 私有函数/变量：单下划线前缀
+def _validate_input(data: dict) -> bool:
+    pass
+
+_cache = {}
 ```
 
-### 方法/变量命名
+### Skill ID 命名
 
-```typescript
-// 方法名：camelCase，动词开头
-async execute(): Promise<ISkillResult> {}
-validateInput(input: unknown): boolean {}
-formatOutput(data: any): string {}
+Skill ID 使用点分层级命名：
 
-// 变量名：camelCase
-const skillName = 'SendMessage';
-const isEnabled = true;
-const maxRetries = 3;
-
-// 常量名：UPPER_SNAKE_CASE
-const MAX_MESSAGE_LENGTH = 5000;
-const DEFAULT_TIMEOUT_MS = 30000;
+```python
+# 格式：{category}.{subcategory}.{action}
+"common.text.extract_keywords"
+"communication.email.send"
+"data.database.query"
+"integration.dingtalk.send_message"
+"domain.customer_service.handle_complaint"
 ```
 
 ---
 
 ## Skill 定义规范
 
-### 基础 Skill 接口
+### 基础 Skill 装饰器
 
-```typescript
-// src/skills/types.ts
+```python
+# src/skills/base.py
 
-/**
- * Skill 配置接口
- */
-export interface ISkillConfig {
-  /** Skill 唯一标识 */
-  id: string;
-  /** Skill 名称 */
-  name: string;
-  /** Skill 描述 */
-  description: string;
-  /** Skill 版本 */
-  version: string;
-  /** Skill 分类 */
-  category: SkillCategory;
-  /** 是否启用 */
-  enabled: boolean;
-  /** 超时时间（毫秒） */
-  timeout?: number;
-  /** 重试次数 */
-  retries?: number;
-}
+from functools import wraps
+from typing import Callable, Any, Optional
+from agentscope.service import ServiceResponse, ServiceExecStatus
+import logging
 
-/**
- * Skill 输入参数接口
- */
-export interface ISkillInput<T = unknown> {
-  /** 参数数据 */
-  data: T;
-  /** 上下文信息 */
-  context?: ISkillContext;
-}
+logger = logging.getLogger(__name__)
 
-/**
- * Skill 执行结果接口
- */
-export interface ISkillResult<T = unknown> {
-  /** 是否成功 */
-  success: boolean;
-  /** 结果数据 */
-  data?: T;
-  /** 错误信息 */
-  error?: ISkillError;
-  /** 执行耗时（毫秒） */
-  duration?: number;
-  /** 元数据 */
-  metadata?: Record<string, unknown>;
-}
 
-/**
- * Skill 错误接口
- */
-export interface ISkillError {
-  /** 错误代码 */
-  code: string;
-  /** 错误消息 */
-  message: string;
-  /** 详细信息 */
-  details?: unknown;
-}
-
-/**
- * Skill 上下文接口
- */
-export interface ISkillContext {
-  /** 用户 ID */
-  userId?: string;
-  /** 房间 ID */
-  roomId?: string;
-  /** 会话 ID */
-  sessionId?: string;
-  /** 请求 ID */
-  requestId?: string;
-  /** 时间戳 */
-  timestamp?: number;
-}
+def skill(
+    skill_id: str,
+    name: str,
+    description: str,
+    version: str = "1.0.0",
+    category: str = "common",
+    enabled: bool = True,
+    timeout: Optional[int] = None,
+    retries: int = 0,
+):
+    """
+    Skill 装饰器，用于标记和配置 Skill 函数
+    
+    Args:
+        skill_id: Skill 唯一标识
+        name: Skill 名称
+        description: Skill 描述
+        version: 版本号
+        category: 分类
+        enabled: 是否启用
+        timeout: 超时时间（秒）
+        retries: 重试次数
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> ServiceResponse:
+            if not enabled:
+                return ServiceResponse(
+                    status=ServiceExecStatus.ERROR,
+                    content=f"Skill '{skill_id}' is disabled"
+                )
+            
+            for attempt in range(retries + 1):
+                try:
+                    logger.info(f"Executing skill: {skill_id}, attempt: {attempt + 1}")
+                    result = func(*args, **kwargs)
+                    logger.info(f"Skill {skill_id} executed successfully")
+                    return result
+                except Exception as e:
+                    logger.error(f"Skill {skill_id} failed: {str(e)}")
+                    if attempt == retries:
+                        return ServiceResponse(
+                            status=ServiceExecStatus.ERROR,
+                            content=f"Skill execution failed: {str(e)}"
+                        )
+            
+        # 附加元数据
+        wrapper._skill_metadata = {
+            "id": skill_id,
+            "name": name,
+            "description": description,
+            "version": version,
+            "category": category,
+            "enabled": enabled,
+            "timeout": timeout,
+            "retries": retries,
+        }
+        
+        return wrapper
+    return decorator
 ```
 
-### 基础 Skill 类
+### Skill 注册中心
 
-```typescript
-// src/skills/base/BaseSkill.ts
+```python
+# src/skills/registry.py
 
-import { ISkillConfig, ISkillInput, ISkillResult, ISkillError } from '../types';
+from typing import Dict, Callable, Optional, List
+from dataclasses import dataclass
 
-/**
- * Skill 基类
- * 所有 Skill 必须继承此类
- */
-export abstract class BaseSkill<TInput = unknown, TOutput = unknown> {
-  protected config: ISkillConfig;
-  
-  constructor(config: ISkillConfig) {
-    this.config = config;
-  }
 
-  /**
-   * 获取 Skill 配置
-   */
-  getConfig(): ISkillConfig {
-    return this.config;
-  }
+@dataclass
+class SkillInfo:
+    """Skill 信息"""
+    id: str
+    name: str
+    description: str
+    version: str
+    category: str
+    enabled: bool
+    func: Callable
 
-  /**
-   * 验证输入参数
-   * @param input 输入参数
-   * @returns 验证结果
-   */
-  abstract validate(input: ISkillInput<TInput>): boolean | Promise<boolean>;
 
-  /**
-   * 执行 Skill 逻辑
-   * @param input 输入参数
-   * @returns 执行结果
-   */
-  abstract execute(input: ISkillInput<TInput>): Promise<ISkillResult<TOutput>>;
-
-  /**
-   * 执行前钩子
-   */
-  protected async beforeExecute(input: ISkillInput<TInput>): Promise<void> {
-    // 子类可覆盖
-  }
-
-  /**
-   * 执行后钩子
-   */
-  protected async afterExecute(result: ISkillResult<TOutput>): Promise<void> {
-    // 子类可覆盖
-  }
-
-  /**
-   * 运行 Skill（包含生命周期钩子）
-   */
-  async run(input: ISkillInput<TInput>): Promise<ISkillResult<TOutput>> {
-    const startTime = Date.now();
+class SkillRegistry:
+    """Skill 注册中心"""
     
-    try {
-      // 验证输入
-      const isValid = await this.validate(input);
-      if (!isValid) {
-        return this.createErrorResult('VALIDATION_ERROR', '输入参数验证失败');
-      }
+    _instance = None
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._skills: Dict[str, SkillInfo] = {}
+        return cls._instance
+    
+    def register(self, func: Callable) -> None:
+        """注册 Skill"""
+        metadata = getattr(func, '_skill_metadata', None)
+        if metadata is None:
+            raise ValueError(f"Function {func.__name__} is not a valid skill")
+        
+        skill_info = SkillInfo(
+            id=metadata["id"],
+            name=metadata["name"],
+            description=metadata["description"],
+            version=metadata["version"],
+            category=metadata["category"],
+            enabled=metadata["enabled"],
+            func=func,
+        )
+        self._skills[metadata["id"]] = skill_info
+    
+    def get(self, skill_id: str) -> Optional[SkillInfo]:
+        """获取 Skill"""
+        return self._skills.get(skill_id)
+    
+    def list_all(self) -> List[SkillInfo]:
+        """列出所有 Skills"""
+        return list(self._skills.values())
+    
+    def list_by_category(self, category: str) -> List[SkillInfo]:
+        """按分类列出 Skills"""
+        return [s for s in self._skills.values() if s.category == category]
+    
+    def execute(self, skill_id: str, *args, **kwargs):
+        """执行 Skill"""
+        skill = self.get(skill_id)
+        if skill is None:
+            raise ValueError(f"Skill '{skill_id}' not found")
+        return skill.func(*args, **kwargs)
 
-      // 执行前钩子
-      await this.beforeExecute(input);
 
-      // 执行主逻辑
-      const result = await this.execute(input);
-
-      // 执行后钩子
-      await this.afterExecute(result);
-
-      // 添加耗时信息
-      result.duration = Date.now() - startTime;
-      
-      return result;
-    } catch (error) {
-      return this.createErrorResult(
-        'EXECUTION_ERROR',
-        error instanceof Error ? error.message : '未知错误',
-        error
-      );
-    }
-  }
-
-  /**
-   * 创建成功结果
-   */
-  protected createSuccessResult(data: TOutput, metadata?: Record<string, unknown>): ISkillResult<TOutput> {
-    return {
-      success: true,
-      data,
-      metadata,
-    };
-  }
-
-  /**
-   * 创建错误结果
-   */
-  protected createErrorResult(code: string, message: string, details?: unknown): ISkillResult<TOutput> {
-    return {
-      success: false,
-      error: {
-        code,
-        message,
-        details,
-      },
-    };
-  }
-}
+# 全局注册中心实例
+skill_registry = SkillRegistry()
 ```
 
 ### Skill 实现示例
 
-```typescript
-// src/skills/chat/SendMessageSkill.ts
+```python
+# src/skills/communication/email.py
 
-import { BaseSkill } from '../base/BaseSkill';
-import { ISkillInput, ISkillResult, SkillCategory } from '../types';
+"""
+邮件相关 Skills
+"""
 
-/**
- * 发送消息输入参数
- */
-interface SendMessageInput {
-  /** 消息内容 */
-  content: string;
-  /** 目标房间 ID */
-  roomId: string;
-  /** 消息类型 */
-  type?: 'text' | 'image' | 'file';
-  /** 附件 */
-  attachments?: string[];
-}
+from typing import List, Optional
+from agentscope.service import ServiceResponse, ServiceExecStatus
+from ..base import skill
+from ..registry import skill_registry
 
-/**
- * 发送消息输出结果
- */
-interface SendMessageOutput {
-  /** 消息 ID */
-  messageId: string;
-  /** 发送时间 */
-  sentAt: number;
-}
 
-/**
- * 发送消息 Skill
- * 
- * @description 处理用户在聊天室中发送消息的功能
- * @category chat
- * @version 1.0.0
- */
-export class SendMessageSkill extends BaseSkill<SendMessageInput, SendMessageOutput> {
-  constructor() {
-    super({
-      id: 'chat.sendMessage',
-      name: 'SendMessage',
-      description: '发送聊天消息',
-      version: '1.0.0',
-      category: SkillCategory.CHAT,
-      enabled: true,
-      timeout: 10000,
-      retries: 3,
-    });
-  }
-
-  /**
-   * 验证消息输入
-   */
-  validate(input: ISkillInput<SendMessageInput>): boolean {
-    const { data } = input;
+@skill(
+    skill_id="communication.email.send",
+    name="发送邮件",
+    description="发送电子邮件到指定收件人",
+    version="1.0.0",
+    category="communication",
+    retries=2,
+)
+def send_email(
+    to: str | List[str],
+    subject: str,
+    body: str,
+    cc: Optional[List[str]] = None,
+    attachments: Optional[List[str]] = None,
+    html: bool = False,
+) -> ServiceResponse:
+    """
+    发送电子邮件
     
-    if (!data.content || data.content.trim().length === 0) {
-      return false;
-    }
-    
-    if (!data.roomId) {
-      return false;
-    }
-    
-    if (data.content.length > 5000) {
-      return false;
-    }
-    
-    return true;
-  }
+    Args:
+        to: 收件人邮箱地址，可以是单个地址或地址列表
+        subject: 邮件主题
+        body: 邮件正文
+        cc: 抄送地址列表
+        attachments: 附件文件路径列表
+        html: 是否为 HTML 格式
+        
+    Returns:
+        ServiceResponse: 包含发送结果
+        
+    Example:
+        >>> result = send_email(
+        ...     to="user@example.com",
+        ...     subject="测试邮件",
+        ...     body="这是一封测试邮件"
+        ... )
+        >>> print(result.status)
+        ServiceExecStatus.SUCCESS
+    """
+    try:
+        # 参数验证
+        if not to:
+            return ServiceResponse(
+                status=ServiceExecStatus.ERROR,
+                content="收件人地址不能为空"
+            )
+        
+        if not subject:
+            return ServiceResponse(
+                status=ServiceExecStatus.ERROR,
+                content="邮件主题不能为空"
+            )
+        
+        # 实际发送逻辑
+        # TODO: 集成实际的邮件发送服务
+        
+        return ServiceResponse(
+            status=ServiceExecStatus.SUCCESS,
+            content={
+                "message": "邮件发送成功",
+                "to": to,
+                "subject": subject,
+            }
+        )
+        
+    except Exception as e:
+        return ServiceResponse(
+            status=ServiceExecStatus.ERROR,
+            content=f"邮件发送失败: {str(e)}"
+        )
 
-  /**
-   * 执行发送消息
-   */
-  async execute(input: ISkillInput<SendMessageInput>): Promise<ISkillResult<SendMessageOutput>> {
-    const { data, context } = input;
-    
-    try {
-      // TODO: 实际的消息发送逻辑
-      const messageId = this.generateMessageId();
-      const sentAt = Date.now();
-      
-      // 这里添加实际的业务逻辑
-      // await messageService.send({...});
-      
-      return this.createSuccessResult({
-        messageId,
-        sentAt,
-      });
-    } catch (error) {
-      return this.createErrorResult(
-        'SEND_FAILED',
-        '消息发送失败',
-        error
-      );
-    }
-  }
 
-  private generateMessageId(): string {
-    return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
-}
+@skill(
+    skill_id="communication.email.read",
+    name="读取邮件",
+    description="从邮箱读取邮件",
+    version="1.0.0",
+    category="communication",
+)
+def read_emails(
+    folder: str = "INBOX",
+    limit: int = 10,
+    unread_only: bool = True,
+) -> ServiceResponse:
+    """
+    读取邮件
+    
+    Args:
+        folder: 邮件文件夹
+        limit: 读取数量限制
+        unread_only: 是否只读取未读邮件
+        
+    Returns:
+        ServiceResponse: 包含邮件列表
+    """
+    try:
+        # TODO: 实现邮件读取逻辑
+        emails = []
+        
+        return ServiceResponse(
+            status=ServiceExecStatus.SUCCESS,
+            content={
+                "emails": emails,
+                "count": len(emails),
+            }
+        )
+        
+    except Exception as e:
+        return ServiceResponse(
+            status=ServiceExecStatus.ERROR,
+            content=f"读取邮件失败: {str(e)}"
+        )
+
+
+# 注册 Skills
+skill_registry.register(send_email)
+skill_registry.register(read_emails)
+```
+
+### 数据处理 Skill 示例
+
+```python
+# src/skills/data/analytics.py
+
+"""
+数据分析相关 Skills
+"""
+
+from typing import List, Dict, Any, Optional
+import pandas as pd
+from agentscope.service import ServiceResponse, ServiceExecStatus
+from ..base import skill
+from ..registry import skill_registry
+
+
+@skill(
+    skill_id="data.analytics.summarize",
+    name="数据摘要",
+    description="生成数据集的统计摘要",
+    version="1.0.0",
+    category="data",
+)
+def summarize_data(
+    data: List[Dict[str, Any]] | pd.DataFrame,
+    columns: Optional[List[str]] = None,
+) -> ServiceResponse:
+    """
+    生成数据摘要统计
+    
+    Args:
+        data: 输入数据，可以是字典列表或 DataFrame
+        columns: 要分析的列，None 表示全部列
+        
+    Returns:
+        ServiceResponse: 包含统计摘要
+    """
+    try:
+        # 转换为 DataFrame
+        if isinstance(data, list):
+            df = pd.DataFrame(data)
+        else:
+            df = data
+        
+        if columns:
+            df = df[columns]
+        
+        # 生成摘要
+        summary = {
+            "shape": df.shape,
+            "columns": list(df.columns),
+            "dtypes": df.dtypes.astype(str).to_dict(),
+            "describe": df.describe().to_dict(),
+            "null_counts": df.isnull().sum().to_dict(),
+        }
+        
+        return ServiceResponse(
+            status=ServiceExecStatus.SUCCESS,
+            content=summary
+        )
+        
+    except Exception as e:
+        return ServiceResponse(
+            status=ServiceExecStatus.ERROR,
+            content=f"数据摘要生成失败: {str(e)}"
+        )
+
+
+@skill(
+    skill_id="data.analytics.aggregate",
+    name="数据聚合",
+    description="对数据进行分组聚合计算",
+    version="1.0.0",
+    category="data",
+)
+def aggregate_data(
+    data: List[Dict[str, Any]] | pd.DataFrame,
+    group_by: str | List[str],
+    aggregations: Dict[str, str | List[str]],
+) -> ServiceResponse:
+    """
+    数据聚合
+    
+    Args:
+        data: 输入数据
+        group_by: 分组字段
+        aggregations: 聚合配置，如 {"sales": ["sum", "mean"], "count": "count"}
+        
+    Returns:
+        ServiceResponse: 包含聚合结果
+    """
+    try:
+        if isinstance(data, list):
+            df = pd.DataFrame(data)
+        else:
+            df = data
+        
+        result = df.groupby(group_by).agg(aggregations)
+        
+        return ServiceResponse(
+            status=ServiceExecStatus.SUCCESS,
+            content={
+                "result": result.to_dict(),
+                "groups": result.index.tolist(),
+            }
+        )
+        
+    except Exception as e:
+        return ServiceResponse(
+            status=ServiceExecStatus.ERROR,
+            content=f"数据聚合失败: {str(e)}"
+        )
+
+
+# 注册 Skills
+skill_registry.register(summarize_data)
+skill_registry.register(aggregate_data)
+```
+
+### 与 AgentScope Agent 集成
+
+```python
+# src/agents/digital_employees/data_analyst.py
+
+"""
+数据分析数字员工
+"""
+
+from agentscope.agents import ReActAgent
+from agentscope.service import ServiceToolkit
+
+from src.skills.data.analytics import summarize_data, aggregate_data
+from src.skills.data.database import query_database
+from src.skills.data.visualization import create_chart
+
+
+class DataAnalystAgent(ReActAgent):
+    """
+    数据分析数字员工
+    
+    职责：
+    - 数据查询和提取
+    - 数据统计分析
+    - 报表生成
+    - 数据可视化
+    """
+    
+    def __init__(
+        self,
+        name: str = "数据分析师",
+        model_config_name: str = "default",
+        **kwargs,
+    ):
+        # 创建服务工具集
+        service_toolkit = ServiceToolkit()
+        
+        # 注册 Skills
+        service_toolkit.add(summarize_data)
+        service_toolkit.add(aggregate_data)
+        service_toolkit.add(query_database)
+        service_toolkit.add(create_chart)
+        
+        # 系统提示
+        sys_prompt = """你是一个专业的数据分析师数字员工。
+
+你的职责包括：
+1. 根据用户需求查询和提取数据
+2. 对数据进行统计分析
+3. 生成分析报告
+4. 创建数据可视化图表
+
+请使用提供的工具来完成用户的数据分析任务。在分析前，先理解用户的需求，然后选择合适的工具进行处理。
+"""
+        
+        super().__init__(
+            name=name,
+            model_config_name=model_config_name,
+            service_toolkit=service_toolkit,
+            sys_prompt=sys_prompt,
+            **kwargs,
+        )
 ```
 
 ---
 
 ## 代码风格
 
-### TypeScript 配置建议
+### Python 代码规范
 
-```json
-{
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "esModuleInterop": true,
-    "declaration": true
-  }
-}
+遵循 [PEP 8](https://pep8.org/) 规范，并使用以下工具：
+
+- **格式化**：`black`（行宽 88）
+- **导入排序**：`isort`
+- **类型检查**：`mypy`
+- **代码检查**：`ruff` 或 `flake8`
+
+### pyproject.toml 配置
+
+```toml
+[project]
+name = "all-in-ai"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "agentscope>=0.0.5",
+    "pandas>=2.0.0",
+    "pydantic>=2.0.0",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py312']
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+select = ["E", "F", "W", "I", "N", "D", "UP", "B", "C4"]
 ```
 
-### ESLint 规则建议
+### 类型注解要求
 
-```javascript
-module.exports = {
-  rules: {
-    // 强制使用分号
-    'semi': ['error', 'always'],
-    // 使用单引号
-    'quotes': ['error', 'single'],
-    // 缩进使用 2 空格
-    'indent': ['error', 2],
-    // 强制返回类型声明
-    '@typescript-eslint/explicit-function-return-type': 'error',
-    // 禁止使用 any
-    '@typescript-eslint/no-explicit-any': 'warn',
-  }
-};
+所有公开函数必须有完整的类型注解：
+
+```python
+from typing import List, Dict, Optional, Any
+
+def process_data(
+    data: List[Dict[str, Any]],
+    options: Optional[Dict[str, str]] = None,
+) -> ServiceResponse:
+    """处理数据"""
+    ...
 ```
-
-### 代码格式要求
-
-1. **缩进**：使用 2 个空格
-2. **行长度**：不超过 100 字符
-3. **分号**：始终使用分号
-4. **引号**：优先使用单引号
-5. **尾逗号**：多行时使用尾逗号
-6. **空行**：
-   - 类方法之间保留一个空行
-   - import 分组之间保留一个空行
-   - 逻辑块之间保留一个空行
 
 ---
 
 ## 文档规范
 
-### 文件头部注释
+### 模块文档
 
-每个 Skill 文件必须包含头部注释：
+每个 Skill 模块文件必须包含模块文档字符串：
 
-```typescript
-/**
- * @file SendMessageSkill.ts
- * @description 发送聊天消息的 Skill 实现
- * @author Your Name
- * @created 2024-01-01
- * @modified 2024-01-15
- */
+```python
+"""
+邮件相关 Skills
+
+该模块提供邮件发送、读取等功能的 Skills 实现。
+
+Skills:
+    - send_email: 发送电子邮件
+    - read_emails: 读取邮件
+    - delete_email: 删除邮件
+
+Example:
+    >>> from src.skills.communication.email import send_email
+    >>> result = send_email(
+    ...     to="user@example.com",
+    ...     subject="测试",
+    ...     body="内容"
+    ... )
+
+Author: Your Name
+Created: 2024-01-01
+"""
 ```
 
-### JSDoc 注释要求
+### 函数文档
 
-```typescript
-/**
- * 发送消息 Skill
- * 
- * @description 处理用户在聊天室中发送消息的功能
- * @category chat
- * @version 1.0.0
- * 
- * @example
- * ```typescript
- * const skill = new SendMessageSkill();
- * const result = await skill.run({
- *   data: {
- *     content: 'Hello, World!',
- *     roomId: 'room_123',
- *   },
- *   context: {
- *     userId: 'user_456',
- *   },
- * });
- * ```
- */
-```
+使用 Google 风格的 docstring：
 
-### 参数文档
-
-```typescript
-/**
- * 发送消息
- * 
- * @param content - 消息内容，最大长度 5000 字符
- * @param roomId - 目标房间 ID
- * @param options - 可选配置
- * @param options.type - 消息类型，默认为 'text'
- * @param options.attachments - 附件列表
- * @returns 返回消息 ID 和发送时间
- * @throws {ValidationError} 当输入参数无效时抛出
- * @throws {NetworkError} 当网络请求失败时抛出
- */
+```python
+def send_email(
+    to: str | List[str],
+    subject: str,
+    body: str,
+) -> ServiceResponse:
+    """
+    发送电子邮件
+    
+    发送邮件到指定的收件人。支持单个或多个收件人，
+    支持纯文本和 HTML 格式的邮件内容。
+    
+    Args:
+        to: 收件人邮箱地址，可以是单个地址或地址列表
+        subject: 邮件主题，不超过 200 个字符
+        body: 邮件正文内容
+        
+    Returns:
+        ServiceResponse: 执行结果
+            - status: 执行状态（SUCCESS/ERROR）
+            - content: 成功时返回发送详情，失败时返回错误信息
+            
+    Raises:
+        ValueError: 当收件人地址格式无效时
+        
+    Example:
+        >>> result = send_email(
+        ...     to="user@example.com",
+        ...     subject="测试邮件",
+        ...     body="这是一封测试邮件"
+        ... )
+        >>> if result.status == ServiceExecStatus.SUCCESS:
+        ...     print("发送成功")
+        
+    Note:
+        - 邮件发送可能需要几秒钟时间
+        - 请确保邮件服务已正确配置
+    """
 ```
 
 ---
@@ -715,54 +851,105 @@ module.exports = {
 
 ### 测试文件结构
 
-```typescript
-// src/skills/chat/__tests__/SendMessageSkill.test.ts
+```python
+# tests/skills/test_communication.py
 
-import { SendMessageSkill } from '../SendMessageSkill';
+"""邮件 Skills 测试"""
 
-describe('SendMessageSkill', () => {
-  let skill: SendMessageSkill;
+import pytest
+from unittest.mock import patch, MagicMock
+from agentscope.service import ServiceExecStatus
 
-  beforeEach(() => {
-    skill = new SendMessageSkill();
-  });
+from src.skills.communication.email import send_email, read_emails
 
-  describe('validate', () => {
-    it('应该拒绝空消息', () => {
-      const result = skill.validate({
-        data: { content: '', roomId: 'room_123' },
-      });
-      expect(result).toBe(false);
-    });
 
-    it('应该拒绝超长消息', () => {
-      const result = skill.validate({
-        data: { content: 'a'.repeat(5001), roomId: 'room_123' },
-      });
-      expect(result).toBe(false);
-    });
+class TestSendEmail:
+    """send_email Skill 测试"""
+    
+    def test_send_email_success(self):
+        """测试成功发送邮件"""
+        result = send_email(
+            to="test@example.com",
+            subject="测试主题",
+            body="测试内容",
+        )
+        
+        assert result.status == ServiceExecStatus.SUCCESS
+        assert "message" in result.content
+    
+    def test_send_email_empty_recipient(self):
+        """测试空收件人"""
+        result = send_email(
+            to="",
+            subject="测试主题",
+            body="测试内容",
+        )
+        
+        assert result.status == ServiceExecStatus.ERROR
+        assert "收件人" in result.content
+    
+    def test_send_email_empty_subject(self):
+        """测试空主题"""
+        result = send_email(
+            to="test@example.com",
+            subject="",
+            body="测试内容",
+        )
+        
+        assert result.status == ServiceExecStatus.ERROR
+    
+    def test_send_email_multiple_recipients(self):
+        """测试多个收件人"""
+        result = send_email(
+            to=["user1@example.com", "user2@example.com"],
+            subject="测试主题",
+            body="测试内容",
+        )
+        
+        assert result.status == ServiceExecStatus.SUCCESS
+    
+    @patch('src.skills.communication.email.smtp_client')
+    def test_send_email_with_mock(self, mock_smtp):
+        """使用 Mock 测试邮件发送"""
+        mock_smtp.send.return_value = True
+        
+        result = send_email(
+            to="test@example.com",
+            subject="测试主题",
+            body="测试内容",
+        )
+        
+        assert result.status == ServiceExecStatus.SUCCESS
+        mock_smtp.send.assert_called_once()
 
-    it('应该接受有效消息', () => {
-      const result = skill.validate({
-        data: { content: 'Hello', roomId: 'room_123' },
-      });
-      expect(result).toBe(true);
-    });
-  });
 
-  describe('execute', () => {
-    it('应该成功发送消息', async () => {
-      const result = await skill.run({
-        data: { content: 'Hello', roomId: 'room_123' },
-        context: { userId: 'user_456' },
-      });
-      
-      expect(result.success).toBe(true);
-      expect(result.data?.messageId).toBeDefined();
-      expect(result.data?.sentAt).toBeDefined();
-    });
-  });
-});
+class TestReadEmails:
+    """read_emails Skill 测试"""
+    
+    def test_read_emails_default_params(self):
+        """测试默认参数读取邮件"""
+        result = read_emails()
+        
+        assert result.status == ServiceExecStatus.SUCCESS
+        assert "emails" in result.content
+        assert "count" in result.content
+    
+    def test_read_emails_with_limit(self):
+        """测试限制数量读取"""
+        result = read_emails(limit=5)
+        
+        assert result.status == ServiceExecStatus.SUCCESS
+
+
+# Fixtures
+@pytest.fixture
+def sample_email_data():
+    """示例邮件数据"""
+    return {
+        "to": "test@example.com",
+        "subject": "测试邮件",
+        "body": "这是测试内容",
+    }
 ```
 
 ### 测试覆盖要求
@@ -772,13 +959,22 @@ describe('SendMessageSkill', () => {
 | 语句覆盖 | 80% |
 | 分支覆盖 | 75% |
 | 函数覆盖 | 90% |
-| 行覆盖 | 80% |
 
-### 测试命名规范
+### 运行测试
 
-- 测试描述使用中文，便于理解
-- 使用 `应该...` 开头描述预期行为
-- 按功能模块分组使用 `describe`
+```bash
+# 运行所有测试
+pytest
+
+# 运行特定模块测试
+pytest tests/skills/test_communication.py
+
+# 生成覆盖率报告
+pytest --cov=src/skills --cov-report=html
+
+# 运行类型检查
+mypy src/
+```
 
 ---
 
@@ -794,20 +990,18 @@ describe('SendMessageSkill', () => {
 
 ### 变更日志
 
-每个 Skill 应维护变更日志：
-
 ```markdown
 ## [1.1.0] - 2024-01-15
 
 ### Added
-- 支持图片消息类型
-- 添加消息重试机制
+- 新增 `send_email` Skill，支持发送带附件的邮件
+- 新增 `read_emails` Skill
 
 ### Changed
-- 优化消息验证逻辑
+- 优化 `summarize_data` 性能
 
 ### Fixed
-- 修复特殊字符转义问题
+- 修复 `aggregate_data` 空数据处理问题
 ```
 
 ---
@@ -816,473 +1010,203 @@ describe('SendMessageSkill', () => {
 
 ### 1. 保持 Skill 职责单一
 
-每个 Skill 只负责一个具体功能，避免功能过于复杂。
+```python
+# ✅ 好的做法：每个函数只做一件事
+def send_email(...) -> ServiceResponse: ...
+def read_emails(...) -> ServiceResponse: ...
+def delete_email(...) -> ServiceResponse: ...
 
-```typescript
-// ✅ 好的做法：职责单一
-class SendMessageSkill { }
-class ReceiveMessageSkill { }
-class DeleteMessageSkill { }
-
-// ❌ 不好的做法：职责过多
-class MessageSkill {
-  send() { }
-  receive() { }
-  delete() { }
-  edit() { }
-}
+# ❌ 不好的做法：一个函数做太多事
+def handle_email(action: str, ...) -> ServiceResponse:
+    if action == "send": ...
+    elif action == "read": ...
+    elif action == "delete": ...
 ```
 
-### 2. 使用依赖注入
+### 2. 合理处理错误
 
-```typescript
-// ✅ 好的做法：通过构造函数注入依赖
-class SendMessageSkill {
-  constructor(
-    private messageService: IMessageService,
-    private logger: ILogger,
-  ) { }
-}
-
-// ❌ 不好的做法：直接实例化依赖
-class SendMessageSkill {
-  private messageService = new MessageService();
-}
+```python
+# ✅ 好的做法：返回结构化错误
+def my_skill(data: str) -> ServiceResponse:
+    if not data:
+        return ServiceResponse(
+            status=ServiceExecStatus.ERROR,
+            content="参数 data 不能为空"
+        )
+    
+    try:
+        result = process(data)
+        return ServiceResponse(
+            status=ServiceExecStatus.SUCCESS,
+            content=result
+        )
+    except ValueError as e:
+        return ServiceResponse(
+            status=ServiceExecStatus.ERROR,
+            content=f"数据格式错误: {str(e)}"
+        )
+    except Exception as e:
+        return ServiceResponse(
+            status=ServiceExecStatus.ERROR,
+            content=f"处理失败: {str(e)}"
+        )
 ```
 
-### 3. 合理处理错误
+### 3. 使用类型注解
 
-```typescript
-// ✅ 好的做法：返回结构化错误
-return this.createErrorResult('NETWORK_ERROR', '网络连接失败', {
-  statusCode: 503,
-  retryAfter: 5000,
-});
+```python
+# ✅ 好的做法：完整的类型注解
+from typing import List, Dict, Optional, Any
 
-// ❌ 不好的做法：抛出未处理的异常
-throw new Error('Something went wrong');
+def process_data(
+    items: List[Dict[str, Any]],
+    config: Optional[Dict[str, str]] = None,
+) -> ServiceResponse:
+    ...
 ```
 
 ### 4. 添加适当的日志
 
-```typescript
-async execute(input: ISkillInput<TInput>): Promise<ISkillResult<TOutput>> {
-  this.logger.info('开始执行 Skill', { 
-    skillId: this.config.id, 
-    input: input.data 
-  });
-  
-  // ... 执行逻辑
-  
-  this.logger.info('Skill 执行完成', { 
-    skillId: this.config.id, 
-    duration: result.duration 
-  });
-}
+```python
+import logging
+
+logger = logging.getLogger(__name__)
+
+def my_skill(data: str) -> ServiceResponse:
+    logger.info(f"开始处理数据，长度: {len(data)}")
+    
+    try:
+        result = process(data)
+        logger.info("数据处理成功")
+        return ServiceResponse(...)
+    except Exception as e:
+        logger.error(f"数据处理失败: {str(e)}", exc_info=True)
+        return ServiceResponse(...)
 ```
 
-### 5. 使用常量代替魔法数字
+### 5. 使用常量
 
-```typescript
-// ✅ 好的做法
-const MAX_MESSAGE_LENGTH = 5000;
-const DEFAULT_TIMEOUT_MS = 30000;
+```python
+# ✅ 好的做法
+MAX_EMAIL_RECIPIENTS = 100
+DEFAULT_TIMEOUT_SECONDS = 30
+SUPPORTED_FILE_EXTENSIONS = ['.pdf', '.docx', '.xlsx']
 
-if (content.length > MAX_MESSAGE_LENGTH) { }
+if len(recipients) > MAX_EMAIL_RECIPIENTS:
+    ...
 
-// ❌ 不好的做法
-if (content.length > 5000) { }
+# ❌ 不好的做法
+if len(recipients) > 100:
+    ...
 ```
 
-### 6. 编写可维护的代码
+### 6. 编写可复用的代码
 
-- 保持函数简短（不超过 50 行）
-- 避免深层嵌套（最多 3 层）
-- 使用早返回减少嵌套
-- 添加必要的类型注解
+```python
+# ✅ 好的做法：提取公共逻辑
+def _validate_email(email: str) -> bool:
+    """验证邮箱格式"""
+    import re
+    pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+    return bool(re.match(pattern, email))
+
+def send_email(to: str, ...) -> ServiceResponse:
+    if not _validate_email(to):
+        return ServiceResponse(
+            status=ServiceExecStatus.ERROR,
+            content="邮箱格式无效"
+        )
+    ...
+```
 
 ---
 
 ## 附录
 
-### A. Skill 清单（多人聊天网站）
+### A. Skill 分类清单
 
-#### P0 - 核心功能
+| 分类 | 说明 | 示例 Skills |
+|------|------|------------|
+| common | 通用技能 | 文本处理、数据转换、文件操作 |
+| communication | 通信相关 | 邮件、短信、通知推送 |
+| data | 数据处理 | 数据库操作、数据分析、可视化 |
+| integration | 外部集成 | API 调用、Webhook、第三方服务 |
+| domain | 领域特定 | 客服、财务、HR、营销 |
 
-| Skill ID | 名称 | 分类 | 版本 | 状态 |
-|----------|------|------|------|------|
-| user.register | 用户注册 | user | 1.0.0 | 待开发 |
-| user.login | 用户登录 | user | 1.0.0 | 待开发 |
-| user.logout | 用户登出 | user | 1.0.0 | 待开发 |
-| chat.sendMessage | 发送消息 | chat | 1.0.0 | 待开发 |
-| chat.receiveMessage | 接收消息 | chat | 1.0.0 | 待开发 |
-| chat.getHistory | 获取历史消息 | chat | 1.0.0 | 待开发 |
-| room.create | 创建房间 | room | 1.0.0 | 待开发 |
-| room.join | 加入房间 | room | 1.0.0 | 待开发 |
-| room.leave | 离开房间 | room | 1.0.0 | 待开发 |
-| room.list | 房间列表 | room | 1.0.0 | 待开发 |
-| realtime.connect | 建立连接 | realtime | 1.0.0 | 待开发 |
-| realtime.disconnect | 断开连接 | realtime | 1.0.0 | 待开发 |
-| realtime.reconnect | 重新连接 | realtime | 1.0.0 | 待开发 |
-| realtime.heartbeat | 心跳检测 | realtime | 1.0.0 | 待开发 |
+### B. AgentScope 常用导入
 
-#### P1 - 重要功能
+```python
+# Agent 相关
+from agentscope.agents import (
+    AgentBase,
+    DialogAgent,
+    ReActAgent,
+    UserAgent,
+)
 
-| Skill ID | 名称 | 分类 | 版本 | 状态 |
-|----------|------|------|------|------|
-| user.getProfile | 获取用户信息 | user | 1.0.0 | 待开发 |
-| user.updateProfile | 更新用户信息 | user | 1.0.0 | 待开发 |
-| user.changePassword | 修改密码 | user | 1.0.0 | 待开发 |
-| user.resetPassword | 重置密码 | user | 1.0.0 | 待开发 |
-| chat.deleteMessage | 删除消息 | chat | 1.0.0 | 待开发 |
-| chat.recallMessage | 撤回消息 | chat | 1.0.0 | 待开发 |
-| chat.markAsRead | 标记已读 | chat | 1.0.0 | 待开发 |
-| room.invite | 邀请用户 | room | 1.0.0 | 待开发 |
-| room.kick | 踢出用户 | room | 1.0.0 | 待开发 |
-| room.getInfo | 获取房间信息 | room | 1.0.0 | 待开发 |
-| room.updateInfo | 更新房间信息 | room | 1.0.0 | 待开发 |
-| room.getMembers | 获取成员列表 | room | 1.0.0 | 待开发 |
-| friend.add | 添加好友 | friend | 1.0.0 | 待开发 |
-| friend.accept | 接受好友 | friend | 1.0.0 | 待开发 |
-| friend.reject | 拒绝好友 | friend | 1.0.0 | 待开发 |
-| friend.remove | 删除好友 | friend | 1.0.0 | 待开发 |
-| friend.list | 好友列表 | friend | 1.0.0 | 待开发 |
-| friend.getRequests | 好友请求列表 | friend | 1.0.0 | 待开发 |
-| notification.send | 发送通知 | notification | 1.0.0 | 待开发 |
-| notification.list | 通知列表 | notification | 1.0.0 | 待开发 |
-| notification.markRead | 标记已读 | notification | 1.0.0 | 待开发 |
-| notification.getUnreadCount | 未读数量 | notification | 1.0.0 | 待开发 |
-| file.upload | 上传文件 | file | 1.0.0 | 待开发 |
-| file.download | 下载文件 | file | 1.0.0 | 待开发 |
-| file.getUrl | 获取文件URL | file | 1.0.0 | 待开发 |
-| realtime.subscribe | 订阅频道 | realtime | 1.0.0 | 待开发 |
-| realtime.unsubscribe | 取消订阅 | realtime | 1.0.0 | 待开发 |
+# Service 相关
+from agentscope.service import (
+    ServiceResponse,
+    ServiceExecStatus,
+    ServiceToolkit,
+)
 
-#### P2 - 增强功能
+# Message 相关
+from agentscope.message import Msg
 
-| Skill ID | 名称 | 分类 | 版本 | 状态 |
-|----------|------|------|------|------|
-| user.updateAvatar | 更新头像 | user | 1.0.0 | 待开发 |
-| user.searchUsers | 搜索用户 | user | 1.0.0 | 待开发 |
-| user.blockUser | 拉黑用户 | user | 1.0.0 | 待开发 |
-| user.unblockUser | 取消拉黑 | user | 1.0.0 | 待开发 |
-| chat.editMessage | 编辑消息 | chat | 1.0.0 | 待开发 |
-| chat.forwardMessage | 转发消息 | chat | 1.0.0 | 待开发 |
-| chat.replyMessage | 回复消息 | chat | 1.0.0 | 待开发 |
-| chat.sendTypingStatus | 发送输入状态 | chat | 1.0.0 | 待开发 |
-| chat.searchMessages | 搜索消息 | chat | 1.0.0 | 待开发 |
-| room.setAdmin | 设置管理员 | room | 1.0.0 | 待开发 |
-| room.transferOwner | 转让房主 | room | 1.0.0 | 待开发 |
-| room.dissolve | 解散房间 | room | 1.0.0 | 待开发 |
-| room.mute | 禁言 | room | 1.0.0 | 待开发 |
-| room.unmute | 解除禁言 | room | 1.0.0 | 待开发 |
-| room.setAnnouncement | 设置公告 | room | 1.0.0 | 待开发 |
-| friend.setRemark | 设置备注 | friend | 1.0.0 | 待开发 |
-| friend.getOnlineStatus | 获取在线状态 | friend | 1.0.0 | 待开发 |
-| notification.delete | 删除通知 | notification | 1.0.0 | 待开发 |
-| file.delete | 删除文件 | file | 1.0.0 | 待开发 |
-| emoji.list | 表情列表 | emoji | 1.0.0 | 待开发 |
-
-### B. 常用工具函数
-
-```typescript
-// src/skills/utils/index.ts
-
-/**
- * 生成唯一 ID
- */
-export function generateId(prefix: string): string {
-  return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
-
-/**
- * 生成消息 ID
- */
-export function generateMessageId(): string {
-  return generateId('msg');
-}
-
-/**
- * 生成房间 ID
- */
-export function generateRoomId(): string {
-  return generateId('room');
-}
-
-/**
- * 生成用户 ID
- */
-export function generateUserId(): string {
-  return generateId('user');
-}
-
-/**
- * 安全解析 JSON
- */
-export function safeJsonParse<T>(json: string, defaultValue: T): T {
-  try {
-    return JSON.parse(json);
-  } catch {
-    return defaultValue;
-  }
-}
-
-/**
- * 延迟执行
- */
-export function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-/**
- * 格式化时间戳
- */
-export function formatTimestamp(timestamp: number): string {
-  return new Date(timestamp).toISOString();
-}
-
-/**
- * 验证邮箱格式
- */
-export function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
-
-/**
- * 验证用户名格式（字母、数字、下划线，3-20字符）
- */
-export function isValidUsername(username: string): boolean {
-  const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
-  return usernameRegex.test(username);
-}
-
-/**
- * 验证密码强度（至少8位，包含字母和数字）
- */
-export function isValidPassword(password: string): boolean {
-  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/;
-  return passwordRegex.test(password);
-}
-
-/**
- * 截断文本
- */
-export function truncateText(text: string, maxLength: number): string {
-  if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength - 3) + '...';
-}
-
-/**
- * 检查是否为有效的房间名
- */
-export function isValidRoomName(name: string): boolean {
-  return name.length >= 2 && name.length <= 50;
-}
+# 模型配置
+from agentscope.models import ModelResponse
+import agentscope
 ```
 
-### C. 聊天网站特定的类型定义
+### C. 常用工具函数
 
-```typescript
-// src/skills/types/chat.types.ts
+```python
+# src/utils/helpers.py
 
-/**
- * 消息类型
- */
-export type MessageType = 'text' | 'image' | 'file' | 'video' | 'audio' | 'emoji' | 'system';
+import re
+from typing import Any
+from datetime import datetime
 
-/**
- * 消息状态
- */
-export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
 
-/**
- * 消息接口
- */
-export interface IMessage {
-  id: string;
-  type: MessageType;
-  content: string;
-  senderId: string;
-  roomId: string;
-  status: MessageStatus;
-  createdAt: number;
-  updatedAt?: number;
-  replyTo?: string;
-  attachments?: IAttachment[];
-}
+def validate_email(email: str) -> bool:
+    """验证邮箱格式"""
+    pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+    return bool(re.match(pattern, email))
 
-/**
- * 附件接口
- */
-export interface IAttachment {
-  id: string;
-  type: 'image' | 'file' | 'video' | 'audio';
-  url: string;
-  name: string;
-  size: number;
-  mimeType: string;
-}
 
-/**
- * 房间类型
- */
-export type RoomType = 'private' | 'group' | 'public';
+def validate_phone(phone: str) -> bool:
+    """验证手机号格式（中国大陆）"""
+    pattern = r'^1[3-9]\d{9}$'
+    return bool(re.match(pattern, phone))
 
-/**
- * 房间接口
- */
-export interface IRoom {
-  id: string;
-  name: string;
-  type: RoomType;
-  description?: string;
-  avatar?: string;
-  ownerId: string;
-  memberCount: number;
-  createdAt: number;
-  updatedAt?: number;
-  lastMessage?: IMessage;
-  announcement?: string;
-}
 
-/**
- * 房间成员角色
- */
-export type MemberRole = 'owner' | 'admin' | 'member';
+def format_datetime(dt: datetime, fmt: str = "%Y-%m-%d %H:%M:%S") -> str:
+    """格式化日期时间"""
+    return dt.strftime(fmt)
 
-/**
- * 房间成员接口
- */
-export interface IRoomMember {
-  id: string;
-  roomId: string;
-  userId: string;
-  role: MemberRole;
-  nickname?: string;
-  joinedAt: number;
-  isMuted: boolean;
-  mutedUntil?: number;
-}
 
-/**
- * 用户接口
- */
-export interface IUser {
-  id: string;
-  username: string;
-  email: string;
-  avatar?: string;
-  nickname?: string;
-  bio?: string;
-  status: 'online' | 'offline' | 'away' | 'busy';
-  lastSeenAt?: number;
-  createdAt: number;
-}
+def safe_get(data: dict, key: str, default: Any = None) -> Any:
+    """安全获取字典值"""
+    try:
+        keys = key.split('.')
+        result = data
+        for k in keys:
+            result = result[k]
+        return result
+    except (KeyError, TypeError):
+        return default
 
-/**
- * 好友关系状态
- */
-export type FriendshipStatus = 'pending' | 'accepted' | 'rejected' | 'blocked';
 
-/**
- * 好友关系接口
- */
-export interface IFriendship {
-  id: string;
-  userId: string;
-  friendId: string;
-  status: FriendshipStatus;
-  remark?: string;
-  createdAt: number;
-  updatedAt?: number;
-}
-
-/**
- * 通知类型
- */
-export type NotificationType = 
-  | 'friend_request'
-  | 'friend_accepted'
-  | 'room_invite'
-  | 'room_kick'
-  | 'mention'
-  | 'system';
-
-/**
- * 通知接口
- */
-export interface INotification {
-  id: string;
-  type: NotificationType;
-  title: string;
-  content: string;
-  userId: string;
-  isRead: boolean;
-  data?: Record<string, unknown>;
-  createdAt: number;
-}
-```
-
-### D. WebSocket 事件定义
-
-```typescript
-// src/skills/types/realtime.types.ts
-
-/**
- * WebSocket 事件类型
- */
-export enum WSEventType {
-  // 连接事件
-  CONNECT = 'connect',
-  DISCONNECT = 'disconnect',
-  RECONNECT = 'reconnect',
-  HEARTBEAT = 'heartbeat',
-  
-  // 消息事件
-  MESSAGE_NEW = 'message:new',
-  MESSAGE_UPDATE = 'message:update',
-  MESSAGE_DELETE = 'message:delete',
-  MESSAGE_RECALL = 'message:recall',
-  MESSAGE_READ = 'message:read',
-  
-  // 房间事件
-  ROOM_JOIN = 'room:join',
-  ROOM_LEAVE = 'room:leave',
-  ROOM_UPDATE = 'room:update',
-  ROOM_MEMBER_JOIN = 'room:member:join',
-  ROOM_MEMBER_LEAVE = 'room:member:leave',
-  ROOM_MEMBER_KICK = 'room:member:kick',
-  
-  // 用户事件
-  USER_ONLINE = 'user:online',
-  USER_OFFLINE = 'user:offline',
-  USER_TYPING = 'user:typing',
-  USER_STOP_TYPING = 'user:stop_typing',
-  
-  // 好友事件
-  FRIEND_REQUEST = 'friend:request',
-  FRIEND_ACCEPT = 'friend:accept',
-  FRIEND_REJECT = 'friend:reject',
-  FRIEND_REMOVE = 'friend:remove',
-  
-  // 通知事件
-  NOTIFICATION_NEW = 'notification:new',
-}
-
-/**
- * WebSocket 消息格式
- */
-export interface IWSMessage<T = unknown> {
-  event: WSEventType;
-  data: T;
-  timestamp: number;
-  requestId?: string;
-}
+def truncate_text(text: str, max_length: int = 100) -> str:
+    """截断文本"""
+    if len(text) <= max_length:
+        return text
+    return text[:max_length - 3] + "..."
 ```
 
 ---
 
-*最后更新：2024*
-*版本：1.1.0*
-*项目：多人聊天网站*
+*最后更新：2024*  
+*版本：1.0.0*  
+*项目：ALL-IN-AI 数字员工平台*
