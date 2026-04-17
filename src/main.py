@@ -4,9 +4,10 @@
 """
 
 import asyncio
+import uuid
 from loguru import logger
 
-from src.agents import agent_registry
+from src.agents import agent_manager
 from src.skills import skill_registry
 
 
@@ -41,18 +42,74 @@ async def demo_agent():
     """演示 Agent 使用"""
     logger.info("=== Agent Demo ===")
 
-    # 导入 Agents（会自动注册）
-    from src.agents.examples import EchoAgent, DialogAgent
+    # 初始化 Agent 管理器（会加载平台级 Agent）
+    await agent_manager.initialize()
 
-    # 列出所有注册的 Agents
-    logger.info(f"Registered agents: {agent_registry.list_agent_ids()}")
+    # 获取平台级通用助手
+    general_assistant = await agent_manager.get_platform_agent("general_assistant")
+    if general_assistant:
+        logger.info(f"General Assistant: {general_assistant.get_info()}")
+    else:
+        logger.warning("General Assistant not found, please run init_db.py first")
 
-    # 创建 Echo Agent 实例
-    echo_agent = agent_registry.create_instance("echo_agent")
-    if echo_agent:
-        await echo_agent.initialize()
-        info = echo_agent.get_info()
-        logger.info(f"Echo Agent info: {info}")
+    # 获取工具助手
+    tool_assistant = await agent_manager.get_platform_agent("tool_assistant")
+    if tool_assistant:
+        logger.info(f"Tool Assistant: {tool_assistant.get_info()}")
+
+
+async def demo_conversation():
+    """演示会话功能（需要数据库）"""
+    logger.info("=== Conversation Demo ===")
+
+    try:
+        from src.db.session import async_session_scope
+        from src.services.user_service import UserService
+        from src.services.space_service import SpaceService, SYSTEM_SPACE_CODE
+
+        # 获取用户和空间
+        async with async_session_scope() as session:
+            user_service = UserService(session)
+            admin = await user_service.get_by_username("admin")
+            if not admin:
+                logger.warning("Admin user not found, skipping conversation demo")
+                return
+
+            space_service = SpaceService(session)
+            system_space = await space_service.get_by_code(SYSTEM_SPACE_CODE)
+            if not system_space:
+                logger.warning("System space not found, skipping conversation demo")
+                return
+
+            user_id = admin.id
+            space_id = system_space.id
+
+        # 创建会话
+        context = await agent_manager.create_conversation(
+            agent_id="general_assistant",
+            space_id=space_id,
+            user_id=user_id,
+            title="测试会话",
+        )
+
+        if context:
+            logger.info(f"Conversation created: {context.conversation_id}")
+
+            # 发送消息
+            response = await agent_manager.chat(
+                agent_id="general_assistant",
+                space_id=space_id,
+                conversation_id=context.conversation_id,
+                message="你好，请介绍一下你自己",
+            )
+
+            if response:
+                logger.info(f"Response: {response.content[:100]}...")
+        else:
+            logger.warning("Failed to create conversation")
+
+    except Exception as e:
+        logger.warning(f"Conversation demo failed (database may not be ready): {e}")
 
 
 async def main():
@@ -62,8 +119,11 @@ async def main():
     # 演示 Skill
     await demo_skill()
 
-    # 演示 Agent
+    # 演示 Agent（需要先运行 init_db.py）
     await demo_agent()
+
+    # 演示会话（需要数据库）
+    # await demo_conversation()
 
     logger.info("演示完成!")
 

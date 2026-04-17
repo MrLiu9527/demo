@@ -12,8 +12,10 @@ from src.core.config import settings
 from src.db.base import Base
 
 # 导入所有模型以确保它们被注册
-from src.models.conversation import Conversation, Message  # noqa: F401
+from src.models.user import User  # noqa: F401
+from src.models.space import Space, SpaceMember  # noqa: F401
 from src.models.agent import AgentConfig  # noqa: F401
+from src.models.conversation import Conversation, Message  # noqa: F401
 
 # Alembic 配置对象
 config = context.config

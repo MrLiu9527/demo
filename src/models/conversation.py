@@ -3,13 +3,14 @@
 import enum
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
     Index,
+    Integer,
     String,
     Text,
     func,
@@ -18,6 +19,10 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db.base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from src.models.agent import AgentConfig
+    from src.models.space import Space
 
 
 class MessageRole(str, enum.Enum):
@@ -61,11 +66,21 @@ class Conversation(Base, TimestampMixin):
         nullable=True,
         comment="会话标题",
     )
-    user_id: Mapped[str] = mapped_column(
-        String(64),
+    # 用户信息
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
         comment="用户ID",
+    )
+    # Agent 信息
+    agent_config_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("agent_configs.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+        comment="Agent配置ID",
     )
     agent_id: Mapped[str] = mapped_column(
         String(64),
@@ -78,6 +93,40 @@ class Conversation(Base, TimestampMixin):
         nullable=False,
         comment="Agent 类型",
     )
+    # 空间信息
+    space_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("spaces.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+        comment="空间ID",
+    )
+    # 会话状态
+    is_active: Mapped[bool] = mapped_column(
+        default=True,
+        comment="是否活跃",
+    )
+    is_pinned: Mapped[bool] = mapped_column(
+        default=False,
+        comment="是否置顶",
+    )
+    ended_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="结束时间",
+    )
+    # 统计
+    message_count: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        comment="消息数量",
+    )
+    total_tokens: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        comment="总Token数",
+    )
+    # 元数据
     metadata_: Mapped[dict[str, Any] | None] = mapped_column(
         "metadata",
         JSONB,
@@ -85,14 +134,11 @@ class Conversation(Base, TimestampMixin):
         default=dict,
         comment="会话元数据",
     )
-    is_active: Mapped[bool] = mapped_column(
-        default=True,
-        comment="是否活跃",
-    )
-    ended_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
+    # 上下文快照（用于恢复会话）
+    context_snapshot: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB,
         nullable=True,
-        comment="结束时间",
+        comment="上下文快照",
     )
 
     # 关系
@@ -105,8 +151,10 @@ class Conversation(Base, TimestampMixin):
     )
 
     __table_args__ = (
-        Index("ix_conversations_user_agent", "user_id", "agent_id"),
+        Index("ix_conversations_user_space", "user_id", "space_id"),
+        Index("ix_conversations_agent_config", "agent_config_id"),
         Index("ix_conversations_created_at", "created_at"),
+        Index("ix_conversations_active_pinned", "is_active", "is_pinned"),
     )
 
     def __repr__(self) -> str:
@@ -117,11 +165,16 @@ class Conversation(Base, TimestampMixin):
         return {
             "id": str(self.id),
             "title": self.title,
-            "user_id": self.user_id,
+            "user_id": str(self.user_id),
+            "agent_config_id": str(self.agent_config_id) if self.agent_config_id else None,
             "agent_id": self.agent_id,
             "agent_type": self.agent_type,
-            "metadata": self.metadata_,
+            "space_id": str(self.space_id),
             "is_active": self.is_active,
+            "is_pinned": self.is_pinned,
+            "message_count": self.message_count,
+            "total_tokens": self.total_tokens,
+            "metadata": self.metadata_,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "ended_at": self.ended_at.isoformat() if self.ended_at else None,
@@ -207,12 +260,24 @@ class Message(Base, TimestampMixin):
         default=dict,
         comment="消息元数据",
     )
+    # 附件
+    attachments: Mapped[list[dict[str, Any]] | None] = mapped_column(
+        JSONB,
+        nullable=True,
+        comment="附件列表",
+    )
     # 父消息（用于追踪回复链）
     parent_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("messages.id", ondelete="SET NULL"),
         nullable=True,
         comment="父消息ID",
+    )
+    # 反馈
+    feedback: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB,
+        nullable=True,
+        comment="用户反馈",
     )
 
     # 关系
@@ -229,6 +294,7 @@ class Message(Base, TimestampMixin):
     __table_args__ = (
         Index("ix_messages_conversation_created", "conversation_id", "created_at"),
         Index("ix_messages_role", "role"),
+        Index("ix_messages_type", "type"),
     )
 
     def __repr__(self) -> str:
@@ -250,7 +316,16 @@ class Message(Base, TimestampMixin):
             "completion_tokens": self.completion_tokens,
             "total_tokens": self.total_tokens,
             "metadata": self.metadata_,
+            "attachments": self.attachments,
             "parent_id": str(self.parent_id) if self.parent_id else None,
+            "feedback": self.feedback,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+    def to_llm_message(self) -> dict[str, str]:
+        """转换为 LLM 消息格式"""
+        return {
+            "role": self.role.value,
+            "content": self.content,
         }
