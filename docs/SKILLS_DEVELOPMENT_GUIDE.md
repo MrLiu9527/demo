@@ -1,6 +1,6 @@
 # Skills 开发规范
 
-> **项目名称**：ALL-IN-AI  
+> **项目名称**：AI-Assistant  
 > **项目描述**：数字员工功能平台，每个数字员工是一个 Agent，根据挂载的工具（Tools）、MCP、Skills 等不同来负责不同的职能  
 > **使用框架**：阿里 AgentScope  
 > **开发语言**：Python 3.12
@@ -1209,4 +1209,4 @@ def truncate_text(text: str, max_length: int = 100) -> str:
 
 *最后更新：2024*  
 *版本：1.0.0*  
-*项目：ALL-IN-AI 数字员工平台*
+*项目：AI-Assistant 数字员工平台*

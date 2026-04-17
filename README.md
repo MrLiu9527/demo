@@ -1,6 +1,6 @@
-# ALL-IN-AI 数字员工平台
+# AI-Assistant 数字员工平台
 
-该项目是 ALL-IN-AI 数字员工平台。所有的功能和业务由 Cursor 完成！
+该项目是 AI-Assistant 数字员工平台。所有的功能和业务由 Cursor 完成！
 
 ## 项目简介
 
@@ -28,8 +28,8 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/MrLiu9527/demo.git
-cd demo
+git clone https://github.com/MrLiu9527/ai-assistant.git
+cd ai-assistant
 
 # 创建虚拟环境
 python -m venv .venv
@@ -96,7 +96,7 @@ API 文档地址：http://localhost:8000/docs
 ## 项目结构
 
 ```
-all-in-ai/
+ai-assistant/
 ├── src/
 │   ├── api/                      # API 层
 │   │   ├── app.py                # FastAPI 应用入口

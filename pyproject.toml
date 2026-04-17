@@ -1,7 +1,7 @@
 [project]
-name = "all-in-ai"
+name = "ai-assistant"
 version = "0.1.0"
-description = "ALL-IN-AI 数字员工平台 - 基于 AgentScope 的可扩展智能代理系统"
+description = "AI-Assistant 数字员工平台 - 基于 AgentScope 的可扩展智能代理系统"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
@@ -106,7 +106,7 @@ exclude = [
 convention = "google"
 
 [project.scripts]
-all-in-ai = "src.api.run:main"
+ai-assistant = "src.api.run:main"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

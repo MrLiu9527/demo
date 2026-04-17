@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     )
 
     # 应用配置
-    app_name: str = Field(default="all-in-ai", description="应用名称")
+    app_name: str = Field(default="ai-assistant", description="应用名称")
     app_env: Literal["development", "staging", "production"] = Field(
         default="development", description="运行环境"
     )

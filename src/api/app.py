@@ -17,7 +17,7 @@ from src.agents import agent_manager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     # 启动时
-    logger.info("Starting ALL-IN-AI API server...")
+    logger.info("Starting AI-Assistant API server...")
 
     # 初始化 Agent 管理器
     try:
@@ -29,14 +29,14 @@ async def lifespan(app: FastAPI):
     yield
 
     # 关闭时
-    logger.info("Shutting down ALL-IN-AI API server...")
+    logger.info("Shutting down AI-Assistant API server...")
 
 
 def create_app() -> FastAPI:
     """创建 FastAPI 应用"""
     app = FastAPI(
-        title="ALL-IN-AI API",
-        description="ALL-IN-AI 数字员工平台 API",
+        title="AI-Assistant API",
+        description="AI-Assistant 数字员工平台 API",
         version="1.0.0",
         docs_url="/docs" if settings.debug else None,
         redoc_url="/redoc" if settings.debug else None,
@@ -62,12 +62,12 @@ def create_app() -> FastAPI:
     # 健康检查
     @app.get("/health", tags=["health"])
     async def health_check():
-        return {"status": "ok", "service": "all-in-ai"}
+        return {"status": "ok", "service": "ai-assistant"}
 
     @app.get("/", tags=["root"])
     async def root():
         return {
-            "name": "ALL-IN-AI API",
+            "name": "AI-Assistant API",
             "version": "1.0.0",
             "docs": "/docs" if settings.debug else None,
         }

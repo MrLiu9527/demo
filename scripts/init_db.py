@@ -103,7 +103,7 @@ async def init_platform_agents() -> None:
                 "name": "通用助手",
                 "description": "一个通用的 AI 对话助手，可以回答各种问题、提供建议和帮助完成任务。",
                 "type": AgentType.DIALOG,
-                "system_prompt": """你是 ALL-IN-AI 平台的通用助手。
+                "system_prompt": """你是 AI-Assistant 平台的通用助手。
 
 你的职责是：
 1. 回答用户的各种问题
@@ -122,7 +122,7 @@ async def init_platform_agents() -> None:
                 "name": "工具助手",
                 "description": "一个可以调用各种工具的 AI 助手，帮助用户完成需要使用工具的复杂任务。",
                 "type": AgentType.TOOL,
-                "system_prompt": """你是 ALL-IN-AI 平台的工具助手。
+                "system_prompt": """你是 AI-Assistant 平台的工具助手。
 
 你的职责是：
 1. 理解用户的需求
