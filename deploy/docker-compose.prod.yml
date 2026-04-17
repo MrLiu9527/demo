@@ -1,0 +1,72 @@
+# EC2 / 生产：与仓库同目录的 .env 提供密钥；数据库与 Redis 由本 compose 启动。
+# 部署目录示例：~/ai-assistant-deploy/（含 docker-compose.prod.yml、.env）
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: all_in_ai
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d all_in_ai"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  init-db:
+    image: ${API_IMAGE:-ai-assistant-api:latest}
+    command: ["python", "scripts/init_db.py"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/all_in_ai
+      DATABASE_SYNC_URL: postgresql+psycopg2://postgres:postgres@postgres:5432/all_in_ai
+    restart: "no"
+
+  api:
+    image: ${API_IMAGE:-ai-assistant-api:latest}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      init-db:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/all_in_ai
+      DATABASE_SYNC_URL: postgresql+psycopg2://postgres:postgres@postgres:5432/all_in_ai
+      REDIS_URL: redis://redis:6379/0
+      APP_ENV: production
+      DEBUG: "false"
+    expose:
+      - "8000"
+
+  nginx:
+    image: ${NGINX_IMAGE:-ai-assistant-nginx:latest}
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+
+volumes:
+  pgdata:
+  redisdata:

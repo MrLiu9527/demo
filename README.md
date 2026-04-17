@@ -117,6 +117,50 @@ pnpm dev:shell
 
 生产环境将子应用构建产物部署后，把主应用的 `VITE_CHAT_ENTRY` 指向子应用入口 URL（与 `vite-plugin-qiankun` 的 `base` 一致）。
 
+## Docker 一键启动（API + Nginx + 前端 + PostgreSQL + Redis）
+
+根目录已提供多阶段 `Dockerfile` 与 `docker-compose.yml`：构建微前端（`VITE_API_BASE_URL=/`、`VITE_CHAT_ENTRY=/child/chat/`），由 Nginx 反代 `/api/`、`/health` 到 Uvicorn。
+
+```bash
+cp .env.example .env   # 按需填写模型 Key 等；数据库连接会被 compose 覆盖为容器内 postgres
+docker compose up --build -d
+```
+
+浏览器访问 `http://localhost:8080/`（文档在 `http://localhost:8080/docs` 仅当 `DEBUG=true` 时可用；生产镜像默认 `DEBUG=false`，可通过 `.env` 调整）。侧栏 **API Base URL** 请填 `/`（同域）。首次启动会执行一次 `scripts/init_db.py` 初始化表与默认数据。
+
+清空数据卷重建：`docker compose down -v`。
+
+### EC2 部署目录（与 GitHub Actions 配合）
+
+在服务器上创建目录（示例 `~/ai-assistant-deploy`），放入：
+
+- 从本仓库复制的 `deploy/docker-compose.prod.yml`
+- 根据 `deploy/.env.example` 编写的 `.env`（**勿提交仓库**）
+
+EC2 需已安装 Docker Engine 与 Docker Compose v2，安全组放行 **80**（及 **22** 供 SSH）。生产 compose 将 **API + Nginx + PostgreSQL + Redis** 一并拉起，对外端口为 **80**。
+
+## CI/CD（GitHub Actions）
+
+- **`.github/workflows/ci.yml`**：`push` / `pull_request` 到 `main` 时并行执行后端（`compileall`、带 PostgreSQL 服务的 `init_db` + pytest）与前端（`pnpm` lint + build）。
+- **`.github/workflows/deploy-ec2.yml`**：当仓库变量 **`EC2_DEPLOY_ENABLED`** 设为 **`true`** 且 **`push` 到 `main`** 时，在 Runner 上构建 API / Nginx 镜像，通过 SSH 将镜像与 `deploy/docker-compose.prod.yml` 同步到 EC2 并执行 `docker compose up -d`。
+
+### 需配置的 Secrets（Repository secrets）
+
+| 名称 | 说明 |
+|------|------|
+| `SETTIMO_AI` | 用于登录 EC2 的 **SSH 私钥**全文（与 `authorized_keys` 中公钥成对） |
+| `EC2_HOST` | 服务器公网 IP 或域名 |
+| `EC2_USER` | SSH 用户名（如 `ubuntu`） |
+| `EC2_DEPLOY_PATH` | 服务器上部署目录的**绝对路径**（该目录下需已有 `.env`，且将接收 `docker-compose.prod.yml` 与镜像 tar） |
+
+### 需配置的 Variables（Repository variables）
+
+| 名称 | 值 | 说明 |
+|------|-----|------|
+| `EC2_DEPLOY_ENABLED` | `true` | 设为 `true` 才在 push `main` 时自动部署；未就绪前可留空或 `false` 避免误部署 |
+
+> 不要把 `authorized_keys` 整文件当作 Secret；Actions 需要的是**私钥**。Deploy keys 用于 Git 拉代码，与上述 SSH 部署密钥用途不同。
+
 ## 项目结构
 
 ```
@@ -184,6 +228,13 @@ ai-assistant/
 ├── migrations/                   # 数据库迁移
 ├── scripts/                      # 脚本
 │   └── init_db.py                # 数据库初始化
+├── deploy/                       # 生产 compose 与 Nginx 配置
+│   ├── docker-compose.prod.yml
+│   ├── nginx/default.conf
+│   └── .env.example
+├── .github/workflows/            # GitHub Actions（CI / EC2 部署）
+├── Dockerfile                    # 多阶段：前端构建、API、Nginx 静态
+├── docker-compose.yml            # 本地/一体化：db + redis + api + nginx
 ├── docs/                         # 文档
 │   └── SKILLS_DEVELOPMENT_GUIDE.md
 ├── pyproject.toml                # 项目配置

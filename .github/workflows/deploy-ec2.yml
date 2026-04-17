@@ -1,0 +1,83 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-ec2-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ vars.EC2_DEPLOY_ENABLED == 'true' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: api
+          tags: ai-assistant-api:latest
+          outputs: type=docker,dest=/tmp/ai-assistant-api.tar
+
+      - name: Build Nginx image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: nginx
+          tags: ai-assistant-nginx:latest
+          outputs: type=docker,dest=/tmp/ai-assistant-nginx.tar
+
+      - name: Combine images for transfer
+        run: |
+          docker load -i /tmp/ai-assistant-api.tar
+          docker load -i /tmp/ai-assistant-nginx.tar
+          docker save ai-assistant-api:latest ai-assistant-nginx:latest -o /tmp/ai-assistant-images.tar
+          ls -lh /tmp/ai-assistant-images.tar
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SETTIMO_AI }}" > ~/.ssh/ec2_deploy_key
+          chmod 600 ~/.ssh/ec2_deploy_key
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Upload compose file and images
+        env:
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          DEPLOY_PATH: ${{ secrets.EC2_DEPLOY_PATH }}
+        run: |
+          set -eux
+          test -n "${EC2_USER}"
+          test -n "${EC2_HOST}"
+          test -n "${DEPLOY_PATH}"
+          scp -i ~/.ssh/ec2_deploy_key -o StrictHostKeyChecking=yes \
+            deploy/docker-compose.prod.yml \
+            "${EC2_USER}@${EC2_HOST}:${DEPLOY_PATH}/docker-compose.prod.yml"
+          scp -i ~/.ssh/ec2_deploy_key -o StrictHostKeyChecking=yes \
+            /tmp/ai-assistant-images.tar \
+            "${EC2_USER}@${EC2_HOST}:${DEPLOY_PATH}/ai-assistant-images.tar"
+
+      - name: Load images and restart stack
+        env:
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          DEPLOY_PATH: ${{ secrets.EC2_DEPLOY_PATH }}
+        run: |
+          set -eux
+          ssh -i ~/.ssh/ec2_deploy_key -o StrictHostKeyChecking=yes \
+            "${EC2_USER}@${EC2_HOST}" \
+            "cd '${DEPLOY_PATH}' && docker load -i ai-assistant-images.tar && \
+             API_IMAGE=ai-assistant-api:latest NGINX_IMAGE=ai-assistant-nginx:latest \
+             docker compose -f docker-compose.prod.yml up -d --remove-orphans && \
+             docker image prune -f"
