@@ -93,6 +93,20 @@ python -m src.api.run
 
 API 文档地址：http://localhost:8000/docs
 
+### 6. Docker Compose（PostgreSQL + Redis + API + Nginx）
+
+一键启动数据库、Redis、数据库初始化、API 与带静态前端的 Nginx（对外 **8080**）：
+
+```bash
+docker compose up --build -d
+```
+
+- 浏览器打开 **http://localhost:8080/**：主应用（qiankun），侧栏里 **API Base URL 填 `/`**，与 Nginx 同域反代 `/api/`。
+- **http://localhost:8080/docs**：Swagger（经 Nginx 转发到后端）。
+- 首次启动会运行 `init-db` 服务执行 `scripts/init_db.py`；若需清空重建，先 `docker compose down -v` 再启动。
+
+镜像构建说明：`Dockerfile` 多阶段构建前端（`VITE_API_BASE_URL=/`、`VITE_CHAT_ENTRY=/child/chat/`）与 Python API；`deploy/nginx.conf` 将 `/api/`、`/health`、`/docs` 等转发到 `api:8000`，静态资源由 Nginx 托管。
+
 ## 前端（微前端 + assistant-ui）
 
 仓库内 `frontend/` 为 **pnpm workspace**，包含：
@@ -121,6 +135,10 @@ pnpm dev:shell
 
 ```
 ai-assistant/
+├── deploy/
+│   └── nginx.conf                # Compose 内 Nginx 站点配置
+├── Dockerfile                    # 前端构建 + API 镜像 + Nginx 静态层
+├── docker-compose.yml            # postgres / redis / init-db / api / nginx
 ├── frontend/                     # 微前端（qiankun + assistant-ui）
 │   ├── packages/shell/           # 主应用
 │   └── packages/chat-app/        # 对话子应用
